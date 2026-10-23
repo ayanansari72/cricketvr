@@ -45,11 +45,45 @@ namespace CricketVR
         public GripAlignment GripFor(BatHand hand) => hand == BatHand.Right ? rightHandGrip : leftHandGrip;
     }
 
+    [Serializable]
+    public class DeliverySettings
+    {
+        public DeliveryConfig defaultDelivery = DeliveryConfig.Create("Good length", 80f, 0f, 6f);
+
+        [Tooltip("Cycled in the headset with a tap of B (debug).")]
+        public DeliveryConfig[] debugPresets =
+        {
+            DeliveryConfig.Create("Good length", 80f, 0f, 6f),
+            DeliveryConfig.Create("Full", 80f, 0f, 3.5f),
+            DeliveryConfig.Create("Short", 80f, 0f, 9f),
+            DeliveryConfig.Create("Outside off", 80f, 0.25f, 6f),
+            DeliveryConfig.Create("Quick", 100f, 0f, 6.5f),
+            DeliveryConfig.Create("Slow", 60f, 0f, 5f),
+            DeliveryConfig.Create("Unreachable test", 30f, 0f, 6f),
+        };
+
+        [Header("Ball")]
+        public float ballRadius = 0.036f;
+        public float ballMass = 0.16f;
+
+        [Header("Delivery lifetime")]
+        [Tooltip("A delivery ends this long after release at the latest (s).")]
+        public float ballTimeout = 10f;
+        [Tooltip("Below this speed (m/s) for settleTime, the ball counts as settled.")]
+        public float settleSpeed = 0.2f;
+        public float settleTime = 0.5f;
+
+        [Header("Debug")]
+        public bool showDebugMarkers = true;
+        public bool logDeliveries = true;
+    }
+
     /// <summary>Tunable game settings. One asset: Assets/CricketVR/Settings/GameConfig.asset.</summary>
     [CreateAssetMenu(menuName = "CricketVR/Game Config", fileName = "GameConfig")]
     public class GameConfig : ScriptableObject
     {
         public Handedness defaultHandedness = Handedness.Right;
         public BatSettings bat = new BatSettings();
+        public DeliverySettings delivery = new DeliverySettings();
     }
 }

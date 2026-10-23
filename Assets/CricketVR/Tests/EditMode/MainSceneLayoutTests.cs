@@ -108,13 +108,14 @@ namespace CricketVR.Tests
             var release = FD.DefaultReleasePoint;
             var launcher = Find("Main/Environment/LauncherAnchor").transform;
             var player = Find("Main/Player").transform;
+            var gameplay = Find("Main/Gameplay").transform; // the ball is meant to fly down this line
 
             var ray = new Ray(eye, (release - eye).normalized);
             float length = Vector3.Distance(eye, release) - 0.05f; // stop just short of the launcher mouth
 
             var blockers = Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None)
                 .Where(r => r.enabled && r.gameObject.activeInHierarchy)
-                .Where(r => !r.transform.IsChildOf(launcher) && !r.transform.IsChildOf(player))
+                .Where(r => !r.transform.IsChildOf(launcher) && !r.transform.IsChildOf(player) && !r.transform.IsChildOf(gameplay))
                 .Where(r => r.bounds.IntersectRay(ray, out float d) && d < length)
                 .Select(r => r.name)
                 .ToArray();

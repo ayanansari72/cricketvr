@@ -2,7 +2,7 @@
 
 A small standalone VR cricket batting prototype for Meta Quest 3: stand at the crease, face six deliveries, see the results, play again. Built on a Mac, run on the headset.
 
-Status: **M3 (tracked bat) complete for the right controller; M4 (bowling machine) in progress.** M1 passed on the headset except the left controller, which is out of service (hardware). See `Docs/PROGRESS.md`.
+Status: **M4 (bowling machine) complete and checked on the headset; M5 (bat–ball contact) next.** M1 passed on the headset except the left controller, which is out of service (hardware). See `Docs/PROGRESS.md`.
 
 ## Versions (recorded 2026-10-23)
 
@@ -19,7 +19,7 @@ Status: **M3 (tracked bat) complete for the right controller; M4 (bowling machin
 | XR Core Utils | 2.6.0 |
 | Test Framework | 1.6.0 |
 
-Exact package resolution is in `Packages/packages-lock.json`. Don't upgrade packages mid-milestone.
+Exact package resolution is in `Packages/packages-lock.json`. TextMeshPro essential resources are committed under `Assets/TextMesh Pro` (imported with `Unity -batchmode -quit -projectPath . -importPackage "<ugui package>/Package Resources/TMP Essential Resources.unitypackage"`). Physics runs at 144 Hz (Fixed Timestep 1/144 s). Don't upgrade packages mid-milestone.
 
 ## Build settings (applied by the setup menu)
 
@@ -103,7 +103,7 @@ For each milestone: read its requirements, refine the plan if needed, complete t
 
 ## Known limitations
 
-- The scene has the practice net, pitch, creases, stumps, launcher, a blank scoreboard placeholder, and a tracked bat. No ball or gameplay yet.
+- The scene has the practice net, pitch, creases, stumps, launcher, a tracked bat, and a debug bowling machine (tap A = bowl again, tap B = next preset; F / N keys in the Editor). Bat-ball contact is still the physics engine's default and can miss (M5). No scoring or session yet.
 - Bat setup controls (until the M7 menu): hold A = switch handedness; hold B = move the bat to the other controller; thumbstick up/down = tilt, left/right = spin; trigger + left/right = lean; grip + up/down = slide; grip + left/right = face turn; tap stick click = reset, hold = swap face and back.
 - Where you stand in the game is the centre of your Quest boundary. Stand there and hold the Meta button to reset the view while facing the launcher.
 - The XRI Starter Assets rig still carries ray/grab interactors; they are harmless now and will be trimmed when bat and UI work begins (M3/M7).

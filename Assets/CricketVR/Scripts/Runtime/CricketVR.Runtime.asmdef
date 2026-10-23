@@ -4,6 +4,7 @@
     "references": [
         "CricketVR.Core",
         "Unity.InputSystem",
+        "Unity.TextMeshPro",
         "Unity.XR.CoreUtils"
     ],
     "includePlatforms": [],

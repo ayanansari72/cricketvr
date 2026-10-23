@@ -13,7 +13,7 @@ Documentation checks confirm that requirements map to tasks and scenarios. That 
 | AC-01 | REQ-001 | Partial: 4/5 owner checks pass; left controller not working (cause not isolated) | APK sha256 2076861…a47fe; E-001–E-004 | Owner: test left controller in Quest Home, then in CricketVR |
 | AC-02 | REQ-002, REQ-015 | **Pass** | APK sha256 f35ebef…f8192; E-005, E-006 | Re-check if the stance, net or scoreboard moves (M3/M7) |
 | AC-03 | REQ-003, REQ-007 | **Pass (right controller)**; left-hand bat pending hardware | APK sha256 9a0e7fc…2663b; E-007–E-014 | Re-run left-hand checks when the left controller works |
-| AC-04 | REQ-004, REQ-005 | Not run | None | M4 repeatable launch test |
+| AC-04 | REQ-004, REQ-005 | **Pass on Quest** | APK sha256 b8f7d8d…9ace3; E-015–E-019 | Re-check if physics rate or pitch material changes |
 | AC-05 | REQ-006, REQ-007, REQ-015 | Not run | None | M5 scripted and device contacts |
 | AC-06 | REQ-008, REQ-009, REQ-010 | Not run | None | M6 outcomes/metrics |
 | AC-07 | REQ-011, REQ-012 | Not run | None | M7 six-delivery loop |
@@ -265,6 +265,86 @@ Actual result and measured values: owner reported all pass. Device log (last ~40
 Outcome: Pass for right controller. Left-handed bat hand not exercised (left controller hardware fault).
 Log or artifact path: device logcat in session
 Remaining limitation / follow-up task: left controller: bat alignment (mirrored guess), handedness with the left bat hand. Capture swing logs to a file on the Mac for future device checks.
+```
+
+```text
+Check ID / acceptance scenario: E-015 / physics-rate measurement for ball bounce (supports AC-04)
+Requirement IDs: REQ-004, REQ-005
+Date and tester: 2026-10-23, agent
+Git commit or build identifier: uncommitted on top of c327387
+Unity and package versions: as E-001
+Environment: PlayMode (temporary probe, since removed), PhysX via Unity 6000.3.27f1
+Configuration: plain sphere r 0.036 m, ContinuousDynamic, pitch box with bounciness 0.55 / friction 0.30 Maximum; release (0, 2.0, 18.9); solver refined for each rate
+Steps or exact command: for each rate, bowl 60/80/100 km/h x lengths 3.5/4.7/6/7.3/9 m; record z where vertical velocity turns upward and the lowest ball-centre height
+Expected result: bounce near the requested length without the ball entering the pitch
+Actual result and measured values: worst |error| over 15 deliveries: 50 Hz 40.4 cm (centre down to -4.7 cm, i.e. sinking below the surface despite CCD); 72 Hz 23.9 cm (-3.4 cm); 90 Hz 19.7 cm (-1.7 cm); 120 Hz 13.6 cm; 144 Hz 8.4 cm (lowest centre +1.2 cm); 180 Hz 7.7 cm; 216 Hz 7.7 cm; 240 Hz 7.7 cm (consistently +3 to +4 cm). Diagnosis: at 50 Hz the ball penetrates the pitch and is resolved at the end of the step, quantizing the bounce to the step grid.
+Outcome: Informational; selected 144 Hz
+Log or artifact path: probe logs in the agent session scratchpad
+Remaining limitation / follow-up task: Quest CPU cost of 144 Hz physics to be measured in M8
+```
+
+```text
+Check ID / acceptance scenario: E-016 / AC-04 scripted (T013-T015)
+Requirement IDs: REQ-004, REQ-005
+Date and tester: 2026-10-23, agent
+Git commit or build identifier: Builds/CricketVR.apk sha256 44ee900a06733dc9dc3f40124a6425d0a848998f3c81a7edfb8f0a8ab5490a97 (uncommitted on top of c327387)
+Unity and package versions: as E-001
+Environment: EditMode + PlayMode tests (real PhysX, 144 Hz), APK build, install
+Configuration: default delivery 80 km/h, line 0, length 6 m, release (0, 2.0, 18.9); presets in GameConfig
+Steps or exact command: MainSceneBuilder (x3 incl. TMP import via -importPackage); -runTests EditMode/PlayMode; QuestBuild.Build; adb install -r
+Expected result: AC-04: 10 identical deliveries bounce within 0.25 m of the first; length/line change the bounce; speed units correct; one ball; unreachable reported
+Actual result and measured values: EditMode 40/40 (solver: exact requested speed; continuous landing within 5 mm; stepped landing within 1 cm for 3.5/6/9 m; fuller length = higher elevation; line moves bounce; 30 km/h to 6 m rejected with minimum ~37.5 km/h and zero velocity; invalid inputs rejected). PlayMode 9/9: 10 identical deliveries max spread from first 0.00 cm, max error from target 5.97 cm; lengths 3.5/6/9 m bounced at 3.474/5.940/8.916 m, line +0.25 at x 0.251; release speed 27.78 m/s for 100 km/h; relaunch cancels the previous delivery (Cancelled event, no events for the old id, one BallController); timeout parks the ball. Collision matrix verified in ProjectSettings: Ball only with Pitch/Boundary/Stumps/BatProxy; BatProxy only with Ball. Builder idempotent. Build 0 errors / 0 warnings; install Success. Earlier failures fixed on the way: test fixture lists not cleared between tests; 40 km/h unreachable case was actually reachable; parked ball rendered in the sight line.
+Outcome: Pass (scripted/build); headset AC-04 pending
+Log or artifact path: EditMode.xml / PlayMode.xml in the agent session scratchpad
+Remaining limitation / follow-up task: headset check of the ten-delivery repeatability and readout; bat contact is still PhysX's default (M5 replaces it)
+```
+
+```text
+Check ID / acceptance scenario: E-017 / AC-04 owner tests 1-2 on Quest (readout, repeatability)
+Requirement IDs: REQ-004, REQ-005, REQ-015
+Date and tester: 2026-10-23, owner + agent (device log)
+Git commit or build identifier: Builds/CricketVR.apk sha256 44ee900a06733dc9dc3f40124a6425d0a848998f3c81a7edfb8f0a8ab5490a97
+Unity and package versions: as E-001
+Environment: Quest device, right controller; adb logcat (4 MB buffer), VrApi
+Configuration: 144 Hz physics; GameConfig debug presets
+Steps or exact command: owner test 1 (scoreboard readout readable from the stance; stance correct) and test 2 (repeated deliveries, bat held clear)
+Expected result: readable readout; identical deliveries bounce within 0.25 m of the first
+Actual result and measured values: owner: test 1 pass, test 2 pass. Log shows ~58 deliveries cycling through all presets in order (consistent with tap B rather than tap A; to be confirmed with the owner). Per preset, measured bounce spread from the first delivery was 0.00 cm in every case: Full n=10 z 3.499 (0.1 cm from target); Short n=10 z 9.070 (7.0 cm); Outside off n=10 x +0.250 z 5.998 (0.2 cm); Quick 100 km/h n=10 z 6.592 (9.2 cm); Slow 60 km/h n=9 z 5.000 (0.0 cm); Good length n=9 z 5.998 (0.2 cm). Unreachable preset rejected each cycle. VrApi: FPS 72-73/72, App 2.3-2.6 ms, CPU&GPU 5.8-6.9 ms.
+Outcome: Pass (repeatability and accuracy on device)
+Log or artifact path: device logcat in session
+Remaining limitation / follow-up task: owner tests 3-5; confirm which button triggered the cycling
+```
+
+```text
+Check ID / acceptance scenario: E-018 / AC-04 owner tests 3-5 and bounce tuning
+Requirement IDs: REQ-004, REQ-005, REQ-015
+Date and tester: 2026-10-23, owner + agent
+Git commit or build identifier: tested build 44ee900a06733dc9dc3f40124a6425d0a848998f3c81a7edfb8f0a8ab5490a97; retuned build b8f7d8dd37987a9c0b5fdc4e27b8bed81e6e0f64bf524c02af18f808bc89ace3
+Unity and package versions: as E-001
+Environment: Quest device (owner); PlayMode with the shipped PitchSurface material (agent)
+Configuration: 80 km/h presets; pitch material before: bounciness 0.55, friction 0.30/0.40; after: 0.72, 0.20/0.30
+Steps or exact command: owner test 3 (presets look different), test 4 (unreachable rejected), test 5 (visibility, speed, bounce, gentle blocks); agent measured ball-centre height at the crease (z = 1.2 m)
+Expected result: presets distinguishable; impossible request refused with no ball; readable, believable deliveries
+Actual result and measured values: owner: test 3 pass (all six presets), test 4 pass (no ball, REJECTED message, A repeats the refusal, B wraps to Good length). Test 5: visibility fine, 80 km/h feels right, gentle blocks show no odd behaviour (PhysX default bat response), but bounce "dying on the surface" and lengths should differ in height (full knee or below, short rising high). Measured height at the crease before: modelled 0.40/0.60/0.68 m (full/good/short). Retuned pitch to bounciness 0.72, friction 0.20/0.30: PlayMode measured full 0.58 m, good 0.95 m, short 1.20 m. Intermediate trials: 0.75 -> 0.62/1.01/1.30; 0.68 -> 0.54/0.87/1.06. New PlayMode test ShorterLengthsArriveHigherAtTheBatter (full <= 0.6, good 0.7-1.05, short >= 1.1, ordered). PlayMode 10/10, EditMode 40/40, build clean, install Success.
+Outcome: Pass for tests 3-4; test 5 bounce retuned, owner re-check pending
+Log or artifact path: PlayMode logs in the agent session scratchpad
+Remaining limitation / follow-up task: 0.72 is livelier than a real pitch (a game-feel choice); owner to confirm in the headset
+```
+
+```text
+Check ID / acceptance scenario: E-019 / AC-04 bounce re-check (build b8f7d8d…)
+Requirement IDs: REQ-004, REQ-005, REQ-007
+Date and tester: 2026-10-23, owner
+Git commit or build identifier: Builds/CricketVR.apk sha256 b8f7d8dd37987a9c0b5fdc4e27b8bed81e6e0f64bf524c02af18f808bc89ace3
+Unity and package versions: as E-001
+Environment: Quest device, right controller
+Configuration: pitch bounciness 0.72, friction 0.20/0.30; 144 Hz physics
+Steps or exact command: owner bowled full, good and short lengths and attempted blocks
+Expected result: bounce heights feel right by length
+Actual result and measured values: owner: "bounce seems good now". Also: "blocking is not working at all. The ball is passing through the bat." The bat-ball hit is still PhysX's default kinematic-vs-dynamic contact (no custom detection yet); a thin (40 mm) kinematic blade against a ball moving ~15 cm per 144 Hz step is the failure CLAUDE.md §8 predicts. Earlier gentle blocks (build 44ee900, lower bounce) were reported fine.
+Outcome: AC-04 Pass. Tunneling observed: input for M5 (REQ-007).
+Log or artifact path: owner report in session
+Remaining limitation / follow-up task: M5 T016-T018: own swept contact detection and resolver; log every bat-ball encounter
 ```
 
 ## Rules

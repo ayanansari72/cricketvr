@@ -1,6 +1,6 @@
 # Implementation tasks
 
-Status: M1 implemented, AC-01 partial (left controller hardware). M2 complete (AC-02 passed). M3 complete for the right controller (AC-03 pass; left hand pending hardware). M4 in progress. Later milestones pending. This is a task specification, not evidence of a built game.
+Status: M1 implemented, AC-01 partial (left controller hardware). M2 complete (AC-02 passed). M3 complete for the right controller (AC-03 pass; left hand pending hardware). M4 complete (AC-04 passed on Quest). M5 next: ball passes through the bat with PhysX's default contact (E-019). Later milestones pending. This is a task specification, not evidence of a built game.
 
 Use `[ ]` for incomplete and `[x]` only for the named completed work. Keep device acceptance pending in `validation.md` when unavailable. Dependencies apply in the order shown. Automated preparatory work may continue while waiting for a physical check, but do not represent untested prerequisites as accepted.
 
@@ -35,9 +35,9 @@ Dependency: M2. Requirements: REQ-003, REQ-007. Acceptance: AC-03.
 
 Dependency: M3 setup. Requirements: REQ-004, REQ-005. Acceptance: AC-04.
 
-- [ ] T013 Add DeliveryConfig, speed conversion, initial-velocity calculation, and unreachable-configuration handling.
-- [ ] T014 Implement one reusable ball with gravity/bounce and complete reset of velocity, trail, flags, and timers.
-- [ ] T015 Add repeatable debug launch controls and bounce measurement; run AC-04's ten-delivery check and record configuration/tolerance results.
+- [x] T013 Add DeliveryConfig, speed conversion, initial-velocity calculation, and unreachable-configuration handling.
+- [x] T014 Implement one reusable ball with gravity/bounce and complete reset of velocity, trail, flags, and timers.
+- [x] T015 Add repeatable debug launch controls and bounce measurement; run AC-04's ten-delivery check and record configuration/tolerance results.
 
 ## M5 — Bat–ball contact
 

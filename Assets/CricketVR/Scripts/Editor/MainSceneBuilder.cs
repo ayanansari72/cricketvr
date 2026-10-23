@@ -40,10 +40,12 @@ namespace CricketVR.Editor
             PracticeNetBuilder.Build(main, environment, created);
             EnsureXrOrigin(player, created);
             BattingBuilder.Build(player, environment, main, created);
+            BowlingBuilder.Build(main, environment, AssetDatabase.LoadAssetAtPath<GameConfig>(BattingBuilder.ConfigPath), created);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             EnsureSceneInBuildSettings();
+            AssetDatabase.SaveAssets(); // GameConfig, materials, and project settings such as the collision matrix
 
             Debug.Log(created.Count == 0
                 ? "[CricketVR] Main scene already complete; nothing added."

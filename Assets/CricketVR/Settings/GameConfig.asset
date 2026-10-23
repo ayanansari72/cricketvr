@@ -48,3 +48,53 @@ MonoBehaviour:
     slideStep: 0.01
     showSuppressionTint: 1
     logSwings: 1
+  delivery:
+    defaultDelivery:
+      label: Good length
+      speedKmh: 80
+      releasePosition: {x: 0, y: 2, z: 18.900002}
+      line: 0
+      length: 6
+    debugPresets:
+    - label: Good length
+      speedKmh: 80
+      releasePosition: {x: 0, y: 2, z: 18.900002}
+      line: 0
+      length: 6
+    - label: Full
+      speedKmh: 80
+      releasePosition: {x: 0, y: 2, z: 18.900002}
+      line: 0
+      length: 3.5
+    - label: Short
+      speedKmh: 80
+      releasePosition: {x: 0, y: 2, z: 18.900002}
+      line: 0
+      length: 9
+    - label: Outside off
+      speedKmh: 80
+      releasePosition: {x: 0, y: 2, z: 18.900002}
+      line: 0.25
+      length: 6
+    - label: Quick
+      speedKmh: 100
+      releasePosition: {x: 0, y: 2, z: 18.900002}
+      line: 0
+      length: 6.5
+    - label: Slow
+      speedKmh: 60
+      releasePosition: {x: 0, y: 2, z: 18.900002}
+      line: 0
+      length: 5
+    - label: Unreachable test
+      speedKmh: 30
+      releasePosition: {x: 0, y: 2, z: 18.900002}
+      line: 0
+      length: 6
+    ballRadius: 0.036
+    ballMass: 0.16
+    ballTimeout: 10
+    settleSpeed: 0.2
+    settleTime: 0.5
+    showDebugMarkers: 1
+    logDeliveries: 1
