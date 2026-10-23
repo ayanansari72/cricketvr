@@ -4,6 +4,8 @@
     "references": [
         "CricketVR.Bootstrap.Editor",
         "CricketVR.Core",
+        "CricketVR.Runtime",
+        "Unity.InputSystem",
         "Unity.XR.CoreUtils",
         "Unity.XR.Management",
         "Unity.XR.Management.Editor",

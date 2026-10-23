@@ -3,6 +3,8 @@
     "rootNamespace": "CricketVR.Tests",
     "references": [
         "CricketVR.Core",
+        "CricketVR.Runtime",
+        "Unity.InputSystem",
         "Unity.XR.CoreUtils",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

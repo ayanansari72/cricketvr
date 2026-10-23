@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b59104b265a6744a5adad8e3c57d3d65, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: CricketVR.Runtime::CricketVR.GameConfig
+  defaultHandedness: 0
+  bat:
+    geometry:
+      bladeWidth: 0.108
+      bladeLength: 0.56
+      bladeThickness: 0.04
+      handleLength: 0.3
+      handleDiameter: 0.032
+      gripToBlade: 0.09
+    motionLimits:
+      maxSampleGap: 0.1
+      maxGripSpeed: 25
+      maxAngularSpeed: 60
+      suppressAfterReset: 0.1
+      minValidSamples: 3
+      velocityWindow: 0.03
+    rightHandGrip:
+      position: {x: 0, y: 0, z: 0}
+      tilt: 25
+      faceTurn: 5
+      lean: 0
+      slide: 0
+      faceFlipped: 1
+      spin: 10
+    leftHandGrip:
+      position: {x: 0, y: 0, z: 0}
+      tilt: 25
+      faceTurn: -5
+      lean: 0
+      slide: 0
+      faceFlipped: 1
+      spin: -10
+    alignmentStepDegrees: 5
+    slideStep: 0.01
+    showSuppressionTint: 1
+    logSwings: 1

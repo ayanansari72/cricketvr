@@ -3,6 +3,7 @@ using NUnit.Framework;
 using Unity.XR.CoreUtils;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.InputSystem.XR;
 using FD = CricketVR.FieldDimensions;
 
 namespace CricketVR.Tests
@@ -132,6 +133,45 @@ namespace CricketVR.Tests
             var toRelease = FD.DefaultReleasePoint - eye;
             Assert.That(Vector3.Angle(toRelease, board - eye), Is.GreaterThan(30f), "scoreboard too close to the delivery line");
             Assert.That(Mathf.Abs(board.x), Is.LessThan(FD.NetHalfWidth), "scoreboard should stay inside the net");
+        }
+    
+        /// <summary>
+        /// Regression (E-009): the bat must follow the grip pose (in line with the handle), not the aim pose
+        /// that the Starter Assets controllers use.
+        /// </summary>
+        [Test]
+        public void BatFollowsGripPoseTrackersNotAimPose()
+        {
+            var bat = Object.FindAnyObjectByType<BatController>();
+            Assert.IsNotNull(bat, "BatController missing");
+            var so = new UnityEditor.SerializedObject(bat);
+            foreach (var field in new[] { "leftController", "rightController" })
+            {
+                var t = so.FindProperty(field).objectReferenceValue as Transform;
+                Assert.IsNotNull(t, field);
+                var driver = t.GetComponent<TrackedPoseDriver>();
+                Assert.IsNotNull(driver, $"{field} ({t.name}) needs its own grip-pose TrackedPoseDriver");
+                StringAssert.EndsWith("/devicePosition", driver.positionInput.action.bindings[0].path);
+                StringAssert.EndsWith("/deviceRotation", driver.rotationInput.action.bindings[0].path);
+            }
+        }
+    
+        /// <summary>
+        /// The realistic blade's flat hitting face must coincide with the physics proxy's face (bat frame z = +thickness/2),
+        /// and its outline must match the proxy's width and length, so the ball meets the bat where the player sees it.
+        /// </summary>
+        [Test]
+        public void VisibleBladeFaceMatchesPhysicsProxyFace()
+        {
+            var config = UnityEditor.AssetDatabase.LoadAssetAtPath<GameConfig>("Assets/CricketVR/Settings/GameConfig.asset");
+            var g = config.bat.geometry;
+            var blade = Find("Main/Player/Bat/BatVisual/Blade").GetComponent<MeshFilter>().sharedMesh;
+            Assert.IsNotNull(blade);
+            var b = blade.bounds;
+            Assert.AreEqual(g.bladeThickness * 0.5f, b.max.z, 0.0005f, "hitting face plane");
+            Assert.AreEqual(g.bladeWidth, b.size.x, 0.001f, "blade width");
+            Assert.AreEqual(-g.gripToBlade - g.bladeLength, b.min.y, 0.001f, "toe");
+            Assert.That(b.size.z, Is.InRange(0.055f, 0.067f), "deepest point within the Laws' 67 mm");
         }
     }
 }

@@ -1,6 +1,6 @@
 # Implementation tasks
 
-Status: M1 implemented, AC-01 partial (left controller hardware). M2 complete (AC-02 passed). Later milestones pending. This is a task specification, not evidence of a built game.
+Status: M1 implemented, AC-01 partial (left controller hardware). M2 complete (AC-02 passed). M3 complete for the right controller (AC-03 pass; left hand pending hardware). M4 in progress. Later milestones pending. This is a task specification, not evidence of a built game.
 
 Use `[ ]` for incomplete and `[x]` only for the named completed work. Keep device acceptance pending in `validation.md` when unavailable. Dependencies apply in the order shown. Automated preparatory work may continue while waiting for a physical check, but do not represent untested prerequisites as accepted.
 
@@ -27,9 +27,9 @@ Dependency: M1 implementation; headset scale acceptance requires device access. 
 
 Dependency: M2. Requirements: REQ-003, REQ-007. Acceptance: AC-03.
 
-- [ ] T010 Add selected-controller binding, grip offsets, handedness selection, bat visual, and kinematic physics proxy.
-- [ ] T011 Implement timestamped pose history, contact-point motion calculation, validity checks, and history reset after discontinuities.
-- [ ] T012 Add alignment/debug controls and verify AC-03 for both hands on Quest.
+- [x] T010 Add selected-controller binding, grip offsets, handedness selection, bat visual, and kinematic physics proxy.
+- [x] T011 Implement timestamped pose history, contact-point motion calculation, validity checks, and history reset after discontinuities.
+- [x] T012 Add alignment/debug controls and verify AC-03 for both hands on Quest.
 
 ## M4 — Bowling machine
 

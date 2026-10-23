@@ -39,6 +39,7 @@ namespace CricketVR.Editor
             EnsureReferenceObjects(environment, created);
             PracticeNetBuilder.Build(main, environment, created);
             EnsureXrOrigin(player, created);
+            BattingBuilder.Build(player, environment, main, created);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);

@@ -2,7 +2,7 @@
 
 A small standalone VR cricket batting prototype for Meta Quest 3: stand at the crease, face six deliveries, see the results, play again. Built on a Mac, run on the headset.
 
-Status: **M2 (practice net) complete and checked on the headset.** M1 passed on the headset except the left controller, which is out of service (hardware). See `Docs/PROGRESS.md`.
+Status: **M3 (tracked bat) complete for the right controller; M4 (bowling machine) in progress.** M1 passed on the headset except the left controller, which is out of service (hardware). See `Docs/PROGRESS.md`.
 
 ## Versions (recorded 2026-10-23)
 
@@ -103,6 +103,7 @@ For each milestone: read its requirements, refine the plan if needed, complete t
 
 ## Known limitations
 
-- The scene has the practice net, pitch, creases, stumps, launcher and a blank scoreboard placeholder. No bat, ball or gameplay yet.
+- The scene has the practice net, pitch, creases, stumps, launcher, a blank scoreboard placeholder, and a tracked bat. No ball or gameplay yet.
+- Bat setup controls (until the M7 menu): hold A = switch handedness; hold B = move the bat to the other controller; thumbstick up/down = tilt, left/right = spin; trigger + left/right = lean; grip + up/down = slide; grip + left/right = face turn; tap stick click = reset, hold = swap face and back.
 - Where you stand in the game is the centre of your Quest boundary. Stand there and hold the Meta button to reset the view while facing the launcher.
 - The XRI Starter Assets rig still carries ray/grab interactors; they are harmless now and will be trimmed when bat and UI work begins (M3/M7).

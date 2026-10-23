@@ -22,7 +22,7 @@ namespace CricketVR.Editor
 
         public static void Build(GameObject main, GameObject environment, List<string> created)
         {
-            EnsureLayers(created);
+            EnsureLayers(created, PitchLayer, BoundaryLayer, StumpsLayer);
             EnsureGround(environment, created);
             EnsurePitch(environment, created);
             EnsureStumps(environment, created);
@@ -34,9 +34,9 @@ namespace CricketVR.Editor
 
         // ---------- Layers ----------
 
-        static void EnsureLayers(List<string> created)
+        public static void EnsureLayers(List<string> created, params string[] names)
         {
-            foreach (var name in new[] { PitchLayer, BoundaryLayer, StumpsLayer })
+            foreach (var name in names)
             {
                 if (LayerMask.NameToLayer(name) >= 0)
                     continue;
@@ -330,7 +330,7 @@ namespace CricketVR.Editor
 
         // ---------- Helpers ----------
 
-        static GameObject CreateVisual(PrimitiveType type, string name, Transform parent, Vector3 localPos, Vector3 localScale, Material mat)
+        public static GameObject CreateVisual(PrimitiveType type, string name, Transform parent, Vector3 localPos, Vector3 localScale, Material mat)
         {
             var go = GameObject.CreatePrimitive(type);
             go.name = name;
@@ -342,7 +342,7 @@ namespace CricketVR.Editor
             return go;
         }
 
-        static Material Mat(string name, Color color)
+        public static Material Mat(string name, Color color)
         {
             var path = $"{MaterialsFolder}/{name}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
