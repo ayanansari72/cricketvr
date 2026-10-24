@@ -106,4 +106,4 @@ For each milestone: read its requirements, refine the plan if needed, complete t
 - The scene has the practice net, pitch, creases, stumps, launcher, a tracked bat, and a debug bowling machine (tap A = bowl again, tap B = next preset; F / N keys in the Editor). Bat-ball contact is still the physics engine's default and can miss (M5). No scoring or session yet.
 - Bat setup controls (until the M7 menu): hold A = switch handedness; hold B = move the bat to the other controller; thumbstick up/down = tilt, left/right = spin; trigger + left/right = lean; grip + up/down = slide; grip + left/right = face turn; tap stick click = reset, hold = swap face and back.
 - Where you stand in the game is the centre of your Quest boundary. Stand there and hold the Meta button to reset the view while facing the launcher.
-- The XRI Starter Assets rig still carries ray/grab interactors; they are harmless now and will be trimmed when bat and UI work begins (M3/M7).
+- The XRI Starter Assets rig still carries ray/grab interactors; they are harmless now and will be trimmed when bat and UI work begins (M3/M7)
