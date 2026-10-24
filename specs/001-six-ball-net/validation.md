@@ -15,11 +15,15 @@ Documentation checks confirm that requirements map to tasks and scenarios. That 
 | AC-03 | REQ-003, REQ-007 | **Pass (right controller)**; left-hand bat pending hardware | APK sha256 9a0e7fc…2663b; E-007–E-014 | Re-run left-hand checks when the left controller works |
 | AC-04 | REQ-004, REQ-005 | **Pass on Quest** | APK sha256 b8f7d8d…9ace3; E-015–E-019 | Re-check if physics rate or pitch material changes |
 | AC-05 | REQ-006, REQ-007, REQ-015 | **Pass on Quest (right controller)**: scripted matrix + owner tests 1-5 | APK sha256 fe6daeb…0800e; E-020–E-029 | Re-check if contact math, physics rate or bat alignment changes; left hand pending hardware |
-| AC-06 | REQ-008, REQ-009, REQ-010 | Not run | None | M6 outcomes/metrics |
+| AC-06 | REQ-008, REQ-009, REQ-010 | **Pass on Quest** (NetMode): automated + owner M6 test 1 | APK sha256 225a148…00ee7; E-030, E-031 | Superseded later by the virtual-field scorer; NetMode kept until then |
 | AC-07 | REQ-011, REQ-012 | Not run | None | M7 six-delivery loop |
 | AC-08 | REQ-013 | Not run | None | M7 restart checks |
 | AC-09 | REQ-014 | Not run | None | M7 interruption checks |
 | AC-10 | REQ-016 | Not run | None | M8 regression/profile |
+| AC-11 | REQ-017, REQ-018, REQ-024 | Not run | None | M6.5 ground visuals |
+| AC-12 | REQ-019, REQ-020 | Not run | None | M6.5 ground physics |
+| AC-13 | REQ-021, REQ-022 | Not run | None | M6.5 mode switch, fielders |
+| AC-14 | REQ-023 | Not run | None | M6.5 on-device performance (foveation on and off) |
 
 ## Evidence entry template
 
@@ -505,6 +509,62 @@ Actual result and measured values: owner: "all pass". Logcat (game logging again
 Outcome: Pass (owner observation + device log). AC-05 passes for the right controller.
 Log or artifact path: adb logcat -s Unity (session 2026-10-24 15:50-16:05 IST)
 Remaining limitation / follow-up task: left-hand bat checks pending hardware; physics bat may trail the visual by about one frame in fast swings; many blocks leave at steep downward angles (face angled down), worth watching in M6 scoring
+```
+
+```text
+Check ID / acceptance scenario: E-030 / AC-06 automated: outcomes, practice zones, finalize-once, carry (T021-T024)
+Requirement IDs: REQ-008, REQ-009, REQ-010
+Date and tester: 2026-10-24, agent
+Git commit or build identifier: uncommitted working tree; APK sha256 225a1480a15d45195c20664f80a5fdb2fa4de15d2dbe6bdba91eac7fa7800ee7
+Unity and package versions: as E-001
+Environment: Mac batch-mode Test Runner; Quest install only
+Configuration: PC-01 accepted (spec.md); GameConfig.scoring defaults (front <1 m 2, 1-3 m 4, >=3 m 6; side/rear 1; over front 6, over side/rear 1; exit margin 0.3 m; dead-ball linger 1.5 s)
+Steps or exact command: Unity -batchmode -runTests -testPlatform EditMode|PlayMode; scene rebuilt with CricketVR.Editor.MainSceneBuilder.BuildOrRepairBatch (added NetWall to the 4 walls, Gameplay/ScoreManager); QuestBuild.Build; adb install
+Expected result: every playable delivery finalizes once; bowled 0; unhit zone contacts 0; timeout/exit terminate; carry only when measured
+Actual result and measured values: EditMode 76/76 (24 new DeliveryAdjudicatorTests: half-open front-net bounds at 0.999/1.0/2.999/3.0 m, run table, exit side + corner priority, unhit zone/exit never scores, bowled 0 not a miss, contact-then-bowled 0 with both flags, stumps beat net in the same step, front-low beats side net, net beats exit, finalize-once against later stumps/timeout/contact, stale contact and stumps ignored, first contact only, cancel leaves no result, settle/timeout fallback, carry from contact to first post-contact landing (10.0 m case), net before or in the same step as the landing = net hit, totals derived from records). PlayMode 28/28 (11 new ScoringPlayModeTests with real physics, one result each: unhit at stumps Bowled; unhit into back net Miss/RearNet; timeout Miss; hits aimed at 0.5/2/4.5 m on the front net -> FrontLow 2 / FrontMiddle 4 / FrontUpper 6 with carry "net hit"; landing before the net measured carry 6.9 m vs ballistic 7.0 m (tolerance 0.15 m); clearing the front net 6, carry N/A; side net 1; contact then bowled 0 with both flags; drop-and-settle NoRuns; relaunch before a result leaves no record; decided ball is dead (ApplyBatHit refused) then parks with reason Finalized). BatControllerPlayModeTests.SteadySwing now repeats a swing only after an Editor frame stall (TimeGap), like the AC-05 harness. Build Success, install Success.
+Outcome: Pass (automated). Headset AC-06 not run.
+Log or artifact path: scratchpad test XML (not committed)
+Remaining limitation / follow-up task: PhysX has no rolling resistance, so a soft forward block can roll to the front net and score 2 rather than settling (to observe with the owner); bails are not dislodged visually
+```
+
+```text
+Check ID / acceptance scenario: E-031 / AC-06 headset: M6 test 1 results on the scoreboard
+Requirement IDs: REQ-008, REQ-009, REQ-010
+Date and tester: 2026-10-24, owner + agent
+Git commit or build identifier: APK sha256 225a1480a15d45195c20664f80a5fdb2fa4de15d2dbe6bdba91eac7fa7800ee7
+Unity and package versions: as E-001
+Environment: Quest 3 standalone, right hand, USB for logcat
+Configuration: NetMode; GameConfig.scoring defaults
+Steps or exact command: leave one (bowled), miss one (back net), ground hit to the far net, lofted drive, side-net hit, soft forward block; owner kept playing
+Expected result: exactly one result per ball matching what happened; totals add up
+Actual result and measured values: owner: "all pass". Logcat (buffer held the end of one session and a full second one): first session reached #108 with totals Balls 103 / practice runs 99 / contacts 74 / misses 28 / bowled 1 (Balls < ids because cancelled or rejected launches have no record); second session #1-#32. 40 results in the buffer, no duplicate ids, no "cancelled before a result" lines: 39 net hits, 1 stumps; unhit -> RearNet Miss 16, Bowled 1; hits -> SideNet 1 run 22, RearNet 1 run 1; carry: 18 net hit, 5 measured (0.6-0.8 m, balls chopped into the ground then into a side net), 17 not hit. Running totals in each line equal the sum of the listed records. Front-net zone lines were in the earlier, rotated part of the log (95 runs from 70 contacts imply them) and are not counted here. Per owner instruction (GD-1), no further net-scoring tuning.
+Outcome: Pass (owner observation + device log)
+Log or artifact path: adb logcat -s Unity, 2026-10-24
+Remaining limitation / follow-up task: the 3.6 m-wide lane sends most hits into a side net (1 run); net scoring to be replaced by the virtual-field scorer after M6.5
+```
+
+## M6.5 evidence template (AC-11 to AC-14)
+
+Add rows AC-11 to AC-14 to the status table ("Not run"). For each check, record:
+
+```text
+Check ID / acceptance scenario: E-0xx / AC-1x <short name>
+Requirement IDs: REQ-0xx
+Date and tester:
+Git commit or build identifier: commit + APK sha256; environment mode (NetMode/GroundMode)
+Unity and package versions: as E-001
+Environment: Quest 3 standalone / Mac batch tests / Profiler over USB
+Configuration: GroundDefinition values changed from default (boundary radius, etc.); FieldConfig; foveation level
+Steps or exact command:
+Expected result:
+Actual result and measured values:
+  - Visual (AC-11): scale / creases both ends / flicker yes-no / shimmer yes-no (where) / ball visibility at release (good / ok / poor)
+  - Physics (AC-12): bounce error per launch (cm) x10; outfield tunnelling cases n/N; rolling stop distance (m); BallLeftGround count per lofted ball
+  - Mode (AC-13): results per delivery (exactly one? y/n); NetMode test counts
+  - Performance (AC-14): FPS min/avg; % frames at 72; CPU ms; GPU ms; draw calls (SetPass/batches); triangles; texture memory MB; foveation on/off and level; method (Profiler / OVR Metrics)
+Outcome: Pass / Partial / Fail
+Log or artifact path:
+Remaining limitation / follow-up task:
 ```
 
 ## Rules

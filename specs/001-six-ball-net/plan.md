@@ -82,21 +82,36 @@ Owns: technical decisions and architecture for `spec.md` (REQ-001..016). Task or
 - Scoreboard: world-space board 1.0 × 0.6 m, about 2.4 m from the stance at 45° toward the off side, centre 1.9 m high, facing the player and inside the net (no collider). 3 m would put it through the side net. M2 places a blank placeholder; text arrives in M7. Start and results panels share that location. Handedness flips which side it uses.
 - Lighting: one directional light (no shadows), flat ambient (0.55, 0.56, 0.60), URP Simple Lit materials. The outfield floor is a 50 m plane centred at z = 10. The ball is bright (white or high-visibility yellow), matching the contrast work in M8.
 
-## 6. Practice zones and terminal rules (M6) — *proposed spec additions, flagged for owner*
-- Zones are trigger volumes **just inside** each wall surface, about 5 cm thick. They only record "reached zone X at time t". The wall collider still physically stops the ball. Scoring is applied at that terminal event.
-  - Front wall zones by impact height: **low < 1.0 m → 2**, **1.0–3.0 m → 4**, **> 3.0 m → 6**. Bounds are half-open intervals, so ties are deterministic.
-  - Side walls and rear wall → **1**.
-  - Tie priority if two zones fire in the same step: `FrontUpper > FrontMiddle > FrontLow > Side > Rear`.
-- **Proposed new rule (gap):** a `BoundaryExit` volume encloses everything. If a contacted ball leaves over the front-wall top, it scores **6**. If it leaves over a side or rear wall, it scores **1**. An unhit ball exiting scores 0. All of these are terminal.
-- Terminal events, finalize-once, earliest first:
-  - stump strike → Bowled, 0 runs
-  - zone reached after a valid bat contact → zone runs
-  - zone reached without contact → Miss/NoContact, 0 runs, terminal
-  - boundary exit
-  - settled (speed < 0.2 m/s for 0.5 s) → 0 runs
-  - timeout of 10 s after release → 0 runs
-- Ground bounces are never terminal.
-- Measured carry: on the first `Pitch/Ground` collision after bat contact, if no net hit came first, record horizontal |Δxz| from contact point to landing point. If a net hit came first, show `Net hit` and carry = N/A. Labelled "Measured carry".
+## 6. Practice zones and terminal rules (M6, T021–T024) — PC-01 accepted 2026-10-24
+
+**Zones are regions of the real net wall colliders**, not separate trigger volumes. Each wall collider carries a `NetWall` component (Front, Left, Right, Rear). The zone is classified from the collision contact point, so no trigger can intercept the ball before it physically meets the net, and the wall still stops the ball. Earlier drafts proposed thin triggers just inside each wall. Using the colliders has the same effect with less geometry and no double-firing.
+
+| Terminal event | Zone | Practice runs after bat contact | Without bat contact |
+| --- | --- | ---: | --- |
+| Front net, contact height y < 1.0 m | FrontLow | 2 | Miss, 0 |
+| Front net, 1.0 ≤ y < 3.0 m | FrontMiddle | 4 | Miss, 0 |
+| Front net, y ≥ 3.0 m | FrontUpper | 6 | Miss, 0 |
+| Left or right net | SideNet | 1 | Miss, 0 |
+| Rear net | RearNet | 1 | Miss, 0 |
+| Ball leaves over the front net (no roof) | OverFront | 6 | Miss, 0 |
+| Ball leaves over a side net | OverSide | 1 | Miss, 0 |
+| Ball leaves over the rear net | OverRear | 1 | Miss, 0 |
+| Stumps hit | — | 0, Bowled (contact flag kept) | Bowled, 0 |
+| Ball settles (< 0.2 m/s for 0.5 s) | — | 0 (zero-run fallback) | Miss, 0 |
+| Timeout (10 s after release) | — | 0 (zero-run fallback) | Miss, 0 |
+
+- Height bounds are half-open intervals, so a boundary value maps to one zone deterministically. All run values and heights live in `GameConfig.scoring`.
+- **Leaving the enclosure:** the ball counts as out once its centre is more than 0.3 m outside a wall plane (x beyond ±(1.8 + 0.3), z > 24.3 or z < −3.3). The walls use CCD, so being outside means the ball went over a wall. At a corner the side is chosen as Front, then Side, then Rear.
+- **Finalize once, in time order.** `ScoreManager` (execution order −45) runs before the contact resolver (−40) in each physics step. It processes the collisions and exit check from the previous simulation step, so everything it sees happened before this step's bat contact. A bat contact applied at step N is therefore never credited to a collision from step N−1. Several terminal events in the same step are resolved by priority: Stumps > FrontUpper > FrontMiddle > FrontLow > SideNet > RearNet > OverFront > OverSide > OverRear. Settle and timeout come from `BallController` after the collision check and only apply if nothing else has finalized.
+- **After finalization the ball is dead.** It stays visible and physical for 1.5 s, so the player sees it hit the net or stumps, but it can't be struck again and no event can change the result. Then it is parked. A relaunch or cancel before finalization discards the delivery: a cancelled ball produces no result, and M7 will replay it.
+- **Stale events** carrying a different delivery id, or arriving after finalization, are ignored.
+- **Bowled after a hit** (played on): the result is Bowled with 0 runs, and both the contact and wicket flags are true. A ball that reaches the net first is finalized there, so it can't later count as bowled.
+- **Measured carry:** the horizontal |Δxz| from the bat contact point to the first ground (Pitch layer) touch after contact, provided no net was touched in that step or before.
+  - If the net comes first (including the same step as the landing), carry shows **Net hit**.
+  - If the ball clears the net, or is finalized before landing, carry shows **N/A**.
+  - If there was no bat contact, there is no carry.
+  - The label is always "Measured carry".
+- **Per-delivery record (`DeliveryResult`):** id, outcome (Scored / NoRuns / Miss / Bowled), terminal event, zone, runs, contact, bowled, carry state and metres, exit speed, launch and direction angles, contact height on the bat, and the delivery config (for reproduction). Session totals are derived from these records in M7.
 
 ## 7. Core architecture (classes, owners, data flow)
 
@@ -215,13 +230,108 @@ Events are plain C# `event Action<…>` on owners: `DeliveryStarted(id)`, `BatCo
 - Expected cost is trivial. Investigate only demonstrated problems: avoid per-frame allocation in PoseHistory and the resolver, keep shared materials, and turn off debug logs in release builds.
 
 ## 14. Milestone execution order
-Execute strictly M1 → M8 per `tasks.md`. Each milestone ends with:
+Execute strictly M1 → M8 per `tasks.md`, with M6.5 (cricket ground, owner request 2026-10-24) between M6 and M7. Each milestone ends with:
 - a tasks.md tick for the code work
 - a `validation.md` evidence entry for each check actually run
 - a `Docs/PROGRESS.md` row update
 - precise owner headset steps when device validation is pending
 
 The MVP isn't claimed done until AC-10 has real device evidence. **First implementation action: M1 (T001–T006).** The owner installs Unity Hub, the Editor, and the modules listed in §1. The agent then configures the project, scene builder, and build script, produces the APK, and hands over the AC-01 headset checklist.
+
+## 15. Cricket ground (M6.5, T033–T046)
+
+Owner decisions GD-1 to GD-12 (accepted 2026-10-24) are recorded in `proposals/M6.5-cricket-ground.md`. Summary: M6 Test 1 and an M6 commit first; black sight screens with the white ball; Outfield layer; GroundDefinition as the single geometry source (Laws values checked against FieldDimensions); vertex-baked shading, no lightmaps; static merged meshes for markers and fielders; 25 m shadow distance.
+
+**Mode switch.**
+- `GameConfig.environment` holds the mode: `NetMode` (default) or `GroundMode`. `Main.unity` contains both `Environment/PracticeNet` (the existing nets, floor and net colliders) and `Environment/Ground`.
+- At startup `EnvironmentModeSwitch` activates one of them and tells ScoreManager which terminal rules to use.
+- The pitch, the striker's stumps, `BattingAnchor`, `LauncherAnchor`, the bowling machine and the scoreboard are shared and never duplicated.
+- Tests and the default build use NetMode. A GroundMode build is made with the menu item `CricketVR/Build/Quest APK (Ground mode)`. NetMode is removed only after the virtual-field scorer (a later task).
+
+**Geometry, one source of truth.**
+- `GroundDefinition` is a ScriptableObject at `Assets/CricketVR/Settings/GroundDefinition.asset`. It holds the pitch, creases, stumps, ground centre, boundary (circle radius or X/Z radii), rope, 30-yard circle, sight screens, apron, boards, stands, fog and sky colours, and the outfield stripe width.
+- Pitch, crease and stump values default from `FieldDimensions` (Laws constants); an EditMode test enforces equality (GD-7).
+- `FieldConfig` is a ScriptableObject holding the fielder list.
+- The future virtual-field scorer will read the boundary shape, ground centre and fielder positions from these two assets.
+
+**Build tool.**
+- `CricketVR/Setup/7. Build or Rebuild Ground` (`GroundBuilder`, Editor-only) deletes and regenerates `Environment/Ground` from `GroundDefinition`. The generated meshes are saved as assets under `Assets/CricketVR/Generated/Ground/`, so builds don't depend on running the tool.
+- It never touches the shared objects or the NetMode objects. It is idempotent: rebuilding twice gives identical assets.
+
+**Visual construction (draw-call estimates).**
+
+| Piece | How | Draw calls | Triangles |
+| --- | --- | ---: | ---: |
+| Outfield disc (r + 3 m) | Procedural disc mesh, 96 segments; stripes and the shading gradient in a 1024² generated texture plus UV tiling; Simple Lit | 1 | ~200 |
+| Pitch strip + all crease markings | One mesh 2 mm above the collider top. Markings painted into a 512×4096 generated texture, so lines can't z-fight. GD-4 crease extensions are a second strip mesh 1 mm above the outfield | 2 | ~50 |
+| Non-striker stumps + bails | Existing primitives, visual only | ~5 | ~3k |
+| Boundary rope | Tube mesh, 6 sides × 256 segments, Simple Lit | 1 | ~3k |
+| 30-yard circle discs | ~43 discs merged into one mesh, 2 mm above the outfield (GD-11) | 1 | ~1k |
+| Sight screens (2) | Boxes, black unlit (GD-2), 10 m wide × 6 m high, 5 m beyond the rope | 2 | 24 |
+| Advertising boards | Ring of 1 m-high panels 3 m beyond the rope; plain colours/owner text via one atlas texture; one mesh | 1 | ~1k |
+| Stands | Stepped ring mesh (5 tiers, 6–12 m high), gaps behind the sight screens; crowd = vertex-colour noise + baked AO (GD-10); one opaque material | 1 | ~10k |
+| Sky | Unlit gradient dome (inverted hemisphere), drawn before the ground | 1 | ~1k |
+| Fielders (10) | Capsule + head merged into one mesh (GD-11), toggled as one object | 1 | ~6k |
+| Existing bat, ball, machine, scoreboard, markers | Unchanged | ~25 | ~40k |
+| **Total estimate** | | **~45** | **~70k** |
+
+The estimates leave large headroom under the 150 draw-call and 250k-triangle budgets. The only large textures are the outfield (1024²) and pitch (512×4096) textures plus the board atlas (1024×256): under 10 MB with ASTC and mipmaps.
+
+**Rendering settings.**
+- One directional light (the existing one), no lightmaps (GD-10). URP Mobile asset: shadow distance 25 m, 1 cascade, soft shadows off. Ground meshes don't cast shadows.
+- HDR stays off, MSAA stays 4×, no post-processing.
+- Linear distance fog (Lighting > Environment): starts at 60 m and ends at 220 m, coloured to match the sky horizon, so the far stands soften.
+- Textures: ASTC 6×6, mipmaps on, trilinear filtering, anisotropic 4× on the outfield and pitch.
+- **Fixed foveated rendering:**
+  - The OpenXR "Foveated Rendering" feature is installed but switched off.
+  - Turn it on for Android, then set `XRDisplaySubsystem.foveatedRenderingLevel = 0.5` (medium) and `foveatedRenderingFlags = None` (fixed, not eye-tracked) at startup.
+  - This works with Vulkan + URP on Quest 3.
+  - Verify the effect with OVR Metrics Tool (GPU time drops, edges slightly softer).
+
+**Ground physics.**
+- **Pitch:** unchanged collider and `PitchSurface` material (bounciness 0.72, friction 0.2, Maximum combine).
+- **Outfield:**
+  - A box collider on the new `Outfield` layer (GD-6), 1 m thick, top at y = 0 and just below the pitch top (pitch top 0.002 m).
+  - The box covers the boundary disc plus 5 m; the pitch collider sits on top inside it.
+  - New `OutfieldGrass` physics material: bounciness 0.45, dynamic friction 0.45, static friction 0.5, Maximum combine.
+  - The ball already uses ContinuousDynamic. 45 m/s at 144 Hz is 0.31 m per step against a 1 m-thick box, so tunnelling is impossible even without CCD.
+- **Rolling drag:**
+  - `BallRollingDrag` sits on the ball. While the ball touches the Outfield layer (OnCollisionStay), it applies a deceleration a = μr·g opposite the horizontal velocity, with μr = 0.08 (a grass rolling-resistance coefficient; tunable).
+  - It is clamped so it never reverses the velocity. It is off on the pitch and in the air.
+  - This is cosmetic and documented as such.
+- **Collision matrix:** Ball also collides with Outfield; BatProxy still collides with nothing.
+
+**Leaving the ground (GD-9, owner-resolved).**
+- `GroundBoundaryMonitor` (runtime) checks the ball position each physics step against the boundary shape from `GroundDefinition`. This is a position test rather than a physics trigger, which keeps it deterministic and matches the M6 exit check.
+- The ball has left the ground when any of these happens:
+  - its centre crosses the rope;
+  - it rises above the stand roof height;
+  - it reaches the outer limit beyond the stands.
+- It raises `BallLeftGround(deliveryId, position, time)` once per delivery and hides the ball 1.5 s later.
+- **Safety despawn** (immediate, no event needed): the ball centre goes below the outfield top (y < −0.5 m) or more than 150 m from the ground centre.
+- The brief asked for trigger volumes; the owner accepted the position test instead (deterministic, cheaper, no trigger layer).
+
+**GroundMode terminal rules (GD-8).**
+- The ScoreManager adjudicator gets a GroundMode rule set, still finalizing exactly once with same-step priority (stumps highest):
+  - stumps → **Bowled** (contact flag kept if hit first);
+  - **unhit** ball whose centre passes z < −1 m, at any x → **Miss**; an unhit ball that settles or times out first → **Miss**;
+  - **hit** ball (including edges and glances behind the wicket) that leaves the ground, settles or times out → **"Hit, practice scoring pending"**, no runs. A hit ball is never a Miss.
+- Measured carry (first landing on pitch or outfield after contact) still works and is labelled the same.
+- NetMode rules are unchanged.
+
+**Performance measurement.**
+- **Unity Profiler:**
+  1. Make a development build (`CricketVR/Build/Quest APK (Development)`, with Autoconnect Profiler).
+  2. Open Window > Analysis > Profiler and choose the Quest under the target selector (over USB via adb).
+  3. In the Rendering module, read Batches/SetPass/Triangles; in Memory, read Texture memory; in CPU, read the frame time.
+- **OVR Metrics Tool** (install from the Meta Horizon Store on the headset): enable the persistent overlay and record FPS, CPU and GPU frame time, and GPU utilization during 2 minutes of batting.
+- **Record actual numbers** in validation.md with fixed foveated rendering **on and off**; the table estimate above is not evidence.
+- **Pass:**
+  - 72 FPS sustained (≥ 99% of frames at 72);
+  - GPU frame time < 11 ms and CPU < 11 ms;
+  - draw calls ≤ 150;
+  - triangles < 250k;
+  - texture memory < 150 MB.
 
 ## Requirement traceability
 
@@ -243,10 +353,18 @@ The MVP isn't claimed done until AC-10 has real device evidence. **First impleme
 | REQ-014 | §8, §11 | T027–T028 | AC-09 |
 | REQ-015 | §5, §10, §11 | T008, T019, T029 | AC-02, AC-05 |
 | REQ-016 | §13, §14 | T030–T032 | AC-10 |
+| REQ-017 | §15 | T036–T041 | AC-11 |
+| REQ-018 | §15 | T033, T036 | AC-11 |
+| REQ-019 | §15 | T034, T036, T042, T045 | AC-12 |
+| REQ-020 | §15 | T043, T045 | AC-12 |
+| REQ-021 | §15 | T035, T044, T045 | AC-13 |
+| REQ-022 | §15 | T033, T041 | AC-13 |
+| REQ-023 | §15 | T046 | AC-14 |
+| REQ-024 | §15 | T037–T040 | AC-11 |
 
 ## Open owner decisions
 
-1. **Zone geometry and boundary-exit rule (§6).** The proposal: front-wall zones split by impact height, side/rear walls score 1, a contacted ball clearing the front wall scores 6, a contacted ball clearing a side or rear wall scores 1, an unhit exit scores 0, and the launcher has no collider. This affects REQ-009 and AC-06. It must be confirmed before M6.
+1. ~~Zone geometry and boundary-exit rule (§6)~~: accepted by the owner 2026-10-24 (PC-01).
 2. ~~Unity 6 LTS patch version~~: resolved 2026-10-23, 6000.3.27f1 (see decisions log).
 3. **Default delivery length.** The proposal is a bounce 6 m from the stumps at 80 km/h. It gets confirmed after M4 measurement, with slower deliveries used for early M5 batting.
 
@@ -278,3 +396,5 @@ The MVP isn't claimed done until AC-10 has real device evidence. **First impleme
 | 2026-10-23 | Bat follows dedicated grip-pose trackers (TrackedPoseDriver on devicePosition/deviceRotation), not the Starter Assets controllers (aim pose); handle along grip +Z, face along the palm; face turn wraps with an in-game 180 degree flip | Aim pose is tilted relative to the handle: caused the reversed (E-008) and then 20-30 degree offset (E-009) bat | REQ-003 |
 | 2026-10-23 | Proceed with M2 while the left controller is out of service | Owner request; left controller is a hardware issue (OVRRemoteService: paired, Searching, battery unknown) | REQ-001, REQ-003 |
 | 2026-10-24 | Swing assist: bat contact-point velocity x1.4 in the response (`batSpeedGain`); sweet spot 0.16 -> 0.20 m from the toe, falloff 0.17 -> 0.22 m, off-centre e 0.28 -> 0.35 | Owner: hard swings "not powerful enough" (E-028). Quest log E-022: most contacts 0.42-0.56 m above the toe (sweet factor <= 0.10, e 0.16-0.30) at contact-point bat speeds 1.9-11.3 m/s; a weightless controller is swung slower than a real bat. A game assist, not a physical claim; toe and shoulder hits remain weaker than the middle | REQ-007 |
+| 2026-10-24 | Practice zones = regions of the net wall colliders (`NetWall`), classified from the contact point; boundary exit by position 0.3 m beyond a wall plane; ScoreManager at execution order -45 processes the previous step's events before bat contact; dead-ball linger 1.5 s | PC-01 accepted; avoids triggers intercepting before physical net contact and keeps events chronological without timestamps | REQ-008, REQ-009, REQ-010 |
+| 2026-10-24 | M6.5 cricket ground ahead of M7, behind a NetMode/GroundMode switch; decisions GD-1 to GD-12 in proposals/M6.5-cricket-ground.md (black sight screens; GroundMode results: unhit past z < -1 m or stopped = Miss, any hit = scoring pending; BallLeftGround at the rope, hide after 1.5 s, safety despawn below outfield or > 150 m) | Owner request; explicit owner instruction overrides the CLAUDE.md primitives-first default. NetMode keeps M6 and all tests intact until the virtual-field scorer | REQ-017–REQ-024 |

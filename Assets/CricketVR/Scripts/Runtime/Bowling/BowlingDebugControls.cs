@@ -16,6 +16,7 @@ namespace CricketVR
     {
         [SerializeField] GameConfig config;
         [SerializeField] BowlingMachine machine;
+        [SerializeField] ScoreManager score;
         [SerializeField] TMP_Text readout;
         public bool allowDebugInput = true;
 
@@ -25,6 +26,7 @@ namespace CricketVR
         float _primaryDown = -1f, _secondaryDown = -1f;
         int _preset;
         string _lastResult = "Tap A to bowl, tap B for the next delivery";
+        string _lastOutcome = "";
 
         DeliveryConfig[] Presets => config.delivery.debugPresets;
 
@@ -43,6 +45,8 @@ namespace CricketVR
                 machine.BounceMeasured += OnBounce;
                 machine.Rejected += OnRejected;
             }
+            if (score != null)
+                score.DeliveryFinalized += OnResult;
             Refresh();
         }
 
@@ -57,6 +61,8 @@ namespace CricketVR
                 machine.BounceMeasured -= OnBounce;
                 machine.Rejected -= OnRejected;
             }
+            if (score != null)
+                score.DeliveryFinalized -= OnResult;
         }
 
         void Update()
@@ -78,7 +84,10 @@ namespace CricketVR
             var preset = Presets[_preset];
             int id = machine.Bowl(preset);
             if (id != 0)
+            {
                 _lastResult = $"#{id} in flight...";
+                _lastOutcome = "";
+            }
             Refresh();
         }
 
@@ -103,6 +112,12 @@ namespace CricketVR
             Refresh();
         }
 
+        void OnResult(DeliveryResult r)
+        {
+            _lastOutcome = $"<b>#{r.DeliveryId} {r.Summary}</b>\n{r.CarryLabel}\n{score.Totals}";
+            Refresh();
+        }
+
         void OnRejected(DeliveryConfig request, string error)
         {
             _lastResult = "REJECTED: " + error;
@@ -115,13 +130,15 @@ namespace CricketVR
                 return;
             var p = Presets[_preset];
             readout.text = $"<b>DEBUG BOWLING</b>\n{_preset + 1}/{Presets.Length} {p.label}\n" +
-                           $"{p.speedKmh:F0} km/h | length {p.length:F1} m | line {p.line:+0.00;-0.00;0.00} m\n{_lastResult}";
+                           $"{p.speedKmh:F0} km/h | length {p.length:F1} m | line {p.line:+0.00;-0.00;0.00} m\n{_lastResult}" +
+                           (string.IsNullOrEmpty(_lastOutcome) ? "" : "\n" + _lastOutcome);
         }
 
-        public void Configure(GameConfig cfg, BowlingMachine bowlingMachine, TMP_Text text)
+        public void Configure(GameConfig cfg, BowlingMachine bowlingMachine, ScoreManager scoreManager, TMP_Text text)
         {
             config = cfg;
             machine = bowlingMachine;
+            score = scoreManager;
             readout = text;
         }
     }

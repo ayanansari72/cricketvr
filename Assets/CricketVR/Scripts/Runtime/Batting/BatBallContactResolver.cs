@@ -14,6 +14,8 @@ namespace CricketVR
         public BatResponse Response;
         public SweptContact Sweep;
         public BatHand Hand;
+        /// <summary>Contact position along the blade, measured up from the toe (m).</summary>
+        public float HeightFromToe;
     }
 
     /// <summary>
@@ -53,7 +55,7 @@ namespace CricketVR
 
         void FixedUpdate()
         {
-            if (config == null || bat == null || ball == null || !ball.InFlight)
+            if (config == null || bat == null || ball == null || !ball.IsLive)
                 return;
 
             int id = ball.ActiveDeliveryId;
@@ -109,6 +111,7 @@ namespace CricketVR
                 Response = response,
                 Sweep = hit,
                 Hand = bat.Hand,
+                HeightFromToe = hit.LocalPoint.y - g.Toe.y,
             };
             if (contactMarker != null && config.contact.showContactMarker)
             {
@@ -149,7 +152,7 @@ namespace CricketVR
                       $"bat {r.BatPointVelocity.magnitude:F1} m/s, approach {r.Response.ApproachSpeed:F1} m/s, " +
                       $"out {o.magnitude:F1} m/s ({Units.MsToKmh(o.magnitude):F0} km/h), launch {launch:F0} deg, direction {direction:F0} deg, " +
                       $"e {r.Response.Restitution:F2}, sweet {r.Response.SweetFactor:F2}, edge {r.Response.EdgeFactor:+0.00;-0.00;0.00}, " +
-                      $"at {r.Sweep.LocalPoint.y - bat.Geometry.Toe.y:F2} m from toe, " +
+                      $"at {r.HeightFromToe:F2} m from toe, " +
                       $"substeps {r.Sweep.Substeps}{(r.Sweep.InitialOverlap ? ", initial overlap" : "")}" +
                       (string.IsNullOrEmpty(r.Response.Note) ? "" : $", {r.Response.Note}"));
         }

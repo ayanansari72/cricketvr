@@ -97,6 +97,17 @@ namespace CricketVR
         public float logNearMissWithin = 0.15f;
     }
 
+    [Serializable]
+    public class ScoringSettings
+    {
+        public ScoringRules rules = ScoringRules.Default;
+        [Tooltip("A ball whose centre is this far (m) outside a net wall has left the enclosure over it.")]
+        public float exitMargin = 0.3f;
+        [Tooltip("After a delivery is finalized the ball stays visible (but can't be hit or score) for this long (s).")]
+        public float deadBallLinger = 1.5f;
+        public bool logResults = true;
+    }
+
     /// <summary>Tunable game settings. One asset: Assets/CricketVR/Settings/GameConfig.asset.</summary>
     [CreateAssetMenu(menuName = "CricketVR/Game Config", fileName = "GameConfig")]
     public class GameConfig : ScriptableObject
@@ -105,5 +116,6 @@ namespace CricketVR
         public BatSettings bat = new BatSettings();
         public DeliverySettings delivery = new DeliverySettings();
         public ContactSettings contact = new ContactSettings();
+        public ScoringSettings scoring = new ScoringSettings();
     }
 }

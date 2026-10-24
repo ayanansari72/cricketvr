@@ -49,7 +49,14 @@ namespace CricketVR.Editor
             EditorUtility.SetDirty(feedback);
             if (bat == null)
                 Debug.LogError("[CricketVR] Player/Bat has no BatController; bat contact won't work.");
-            debug.Configure(config, machine, EnsureReadout(main, created));
+
+            // M6 outcomes: zones are regions of the tagged net walls (plan.md §6).
+            EnsureNetWalls(environment, created);
+            var score = GetOrAdd<ScoreManager>(Child(gameplay, "ScoreManager", created).gameObject, created);
+            score.Configure(config, ball, resolver, machine);
+            EditorUtility.SetDirty(score);
+
+            debug.Configure(config, machine, score, EnsureReadout(main, created));
             EditorUtility.SetDirty(machine);
             EditorUtility.SetDirty(debug);
             EditorUtility.SetDirty(config); // persists newly added GameConfig fields with their defaults
@@ -95,6 +102,32 @@ namespace CricketVR.Editor
             if (walls != null)
                 foreach (var c in walls.GetComponentsInChildren<Collider>())
                     c.sharedMaterial = net;
+        }
+
+        static void EnsureNetWalls(GameObject environment, List<string> created)
+        {
+            var walls = environment.transform.Find("NetBoundaryColliders");
+            if (walls == null)
+            {
+                Debug.LogError("[CricketVR] Environment/NetBoundaryColliders missing; practice zones won't score.");
+                return;
+            }
+            foreach (var (name, side) in new[] { ("FrontWall", WallSide.Front), ("LeftWall", WallSide.Left), ("RightWall", WallSide.Right), ("RearWall", WallSide.Rear) })
+            {
+                var t = walls.Find(name);
+                if (t == null)
+                {
+                    Debug.LogError($"[CricketVR] Net wall '{name}' missing under NetBoundaryColliders.");
+                    continue;
+                }
+                if (!t.TryGetComponent<NetWall>(out var tag))
+                {
+                    tag = t.gameObject.AddComponent<NetWall>();
+                    created.Add($"NetWall on {name}");
+                }
+                tag.side = side;
+                EditorUtility.SetDirty(tag);
+            }
         }
 
         static PhysicsMaterial Material(string name, float bounce, float dynamicFriction, float staticFriction, PhysicsMaterialCombine combine, List<string> created)

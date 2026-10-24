@@ -77,12 +77,21 @@ namespace CricketVR.Tests
             // Rotate the controller about world Y at 10 rad/s around its own position for ~0.3 s.
             const float omega = 10f;
             float angle = 0f;
-            float start = Time.unscaledTime;
-            while (Time.unscaledTime - start < 0.3f)
+            // A stalled batch-mode Editor frame (> 0.1 s) resets the tracker by design; repeat the swing then (max 2).
+            for (int attempt = 0; attempt < 3; attempt++)
             {
-                angle += omega * Time.unscaledDeltaTime * Mathf.Rad2Deg;
-                _right.SetPositionAndRotation(new Vector3(0f, 1f, 1f), Quaternion.Euler(0f, angle, 0f) * Quaternion.Euler(-90f, 0f, 0f));
-                yield return null;
+                double started = Time.unscaledTimeAsDouble;
+                float start = Time.unscaledTime;
+                while (Time.unscaledTime - start < 0.3f)
+                {
+                    angle += omega * Time.unscaledDeltaTime * Mathf.Rad2Deg;
+                    _right.SetPositionAndRotation(new Vector3(0f, 1f, 1f), Quaternion.Euler(0f, angle, 0f) * Quaternion.Euler(-90f, 0f, 0f));
+                    yield return null;
+                }
+                bool stalled = _bat.Motion.LastResetReason == MotionResetReason.TimeGap && _bat.Motion.LastResetTime >= started;
+                if (_bat.ContactAllowed || !stalled)
+                    break;
+                Debug.Log("[CricketVR] Swing repeated after an Editor frame stall");
             }
 
             Assert.IsTrue(_bat.ContactAllowed);

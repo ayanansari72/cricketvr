@@ -3,7 +3,14 @@ using UnityEngine;
 
 namespace CricketVR
 {
-    public enum BallEndReason { Timeout, Settled, Cancelled }
+    public enum BallEndReason
+    {
+        Timeout,
+        Settled,
+        Cancelled,
+        /// <summary>The delivery's result was decided (<see cref="Finish"/>) and the dead ball's linger ended.</summary>
+        Finalized,
+    }
 
     /// <summary>
     /// The single reusable ball. Owns its flight lifecycle: launch, contact reporting, timeout/settle, and a complete
@@ -19,11 +26,13 @@ namespace CricketVR
 
         Rigidbody _body;
         int _pitchLayer;
-        float _launchTime, _slowSince;
-        bool _bounced;
+        float _launchTime, _slowSince, _parkAt;
+        bool _bounced, _dead;
 
         public int ActiveDeliveryId { get; private set; }
         public bool InFlight { get; private set; }
+        /// <summary>In flight and its result not yet decided: it can still be hit and still score.</summary>
+        public bool IsLive => InFlight && !_dead;
         public Rigidbody Body => _body;
         public float Radius => config.delivery.ballRadius;
 
@@ -80,6 +89,7 @@ namespace CricketVR
             ActiveDeliveryId = deliveryId;
             InFlight = true;
             _bounced = false;
+            _dead = false;
             _launchTime = Time.time;
             _slowSince = -1f;
         }
@@ -90,12 +100,26 @@ namespace CricketVR
         /// </summary>
         public bool ApplyBatHit(int deliveryId, Vector3 position, Vector3 velocity)
         {
-            if (!InFlight || deliveryId != ActiveDeliveryId)
+            if (!IsLive || deliveryId != ActiveDeliveryId)
                 return false;
             _body.position = position;
             _body.linearVelocity = velocity;
             _body.angularVelocity = Vector3.zero;
             _slowSince = -1f;
+            return true;
+        }
+
+        /// <summary>
+        /// The delivery's result has been decided: the ball becomes dead (no more hits, timeouts or settling) but
+        /// stays visible and physical for <paramref name="linger"/> seconds so the player sees it meet the net or
+        /// stumps, then it is parked. Ignored for a stale id.
+        /// </summary>
+        public bool Finish(int deliveryId, float linger)
+        {
+            if (!IsLive || deliveryId != ActiveDeliveryId)
+                return false;
+            _dead = true;
+            _parkAt = Time.time + Mathf.Max(0f, linger);
             return true;
         }
 
@@ -110,6 +134,11 @@ namespace CricketVR
         {
             if (!InFlight)
                 return;
+            if (_dead)
+            {
+                if (Time.time >= _parkAt) End(BallEndReason.Finalized);
+                return;
+            }
 
             float elapsed = Time.time - _launchTime;
             if (elapsed > config.delivery.ballTimeout)

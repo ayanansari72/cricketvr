@@ -1736,6 +1736,7 @@ GameObject:
   m_Component:
   - component: {fileID: 380870693}
   - component: {fileID: 380870694}
+  - component: {fileID: 380870695}
   m_Layer: 7
   m_Name: RightWall
   m_TagString: Untagged
@@ -1779,6 +1780,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.1, y: 4, z: 27.2}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &380870695
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 380870692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90ff392ead1d34e0db4d1ae1531934a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CricketVR.Runtime::CricketVR.NetWall
+  side: 2
 --- !u!1 &417579575
 GameObject:
   m_ObjectHideFlags: 0
@@ -2739,6 +2753,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: CricketVR.Runtime::CricketVR.BowlingDebugControls
   config: {fileID: 11400000, guid: f41fb0d15750d464b828187ccdc5edf0, type: 2}
   machine: {fileID: 625405123}
+  score: {fileID: 1775366559}
   readout: {fileID: 1557683940}
   allowDebugInput: 1
 --- !u!114 &625405123
@@ -3721,6 +3736,7 @@ GameObject:
   m_Component:
   - component: {fileID: 873587523}
   - component: {fileID: 873587524}
+  - component: {fileID: 873587525}
   m_Layer: 7
   m_Name: FrontWall
   m_TagString: Untagged
@@ -3764,6 +3780,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3.6, y: 6, z: 0.1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &873587525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 873587522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90ff392ead1d34e0db4d1ae1531934a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CricketVR.Runtime::CricketVR.NetWall
+  side: 0
 --- !u!1 &876849526
 GameObject:
   m_ObjectHideFlags: 0
@@ -5706,6 +5735,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1494286359}
   - component: {fileID: 1494286360}
+  - component: {fileID: 1494286361}
   m_Layer: 7
   m_Name: RearWall
   m_TagString: Untagged
@@ -5749,6 +5779,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3.6, y: 4, z: 0.1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1494286361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1494286358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90ff392ead1d34e0db4d1ae1531934a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CricketVR.Runtime::CricketVR.NetWall
+  side: 3
 --- !u!1 &1495827330
 GameObject:
   m_ObjectHideFlags: 0
@@ -5849,6 +5892,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1515201839}
   - component: {fileID: 1515201840}
+  - component: {fileID: 1515201841}
   m_Layer: 7
   m_Name: LeftWall
   m_TagString: Untagged
@@ -5892,6 +5936,19 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.1, y: 4, z: 27.2}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1515201841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1515201838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90ff392ead1d34e0db4d1ae1531934a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CricketVR.Runtime::CricketVR.NetWall
+  side: 1
 --- !u!1 &1548505663
 GameObject:
   m_ObjectHideFlags: 0
@@ -6435,6 +6492,7 @@ Transform:
   - {fileID: 1782951243}
   - {fileID: 625405121}
   - {fileID: 776447979}
+  - {fileID: 1775366558}
   m_Father: {fileID: 1949642678}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1691145865
@@ -6527,6 +6585,54 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1691145865}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1775366557
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1775366558}
+  - component: {fileID: 1775366559}
+  m_Layer: 0
+  m_Name: ScoreManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1775366558
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1775366557}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1679952882}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1775366559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1775366557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d473921c2887044fb97bb76d373208e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: CricketVR.Runtime::CricketVR.ScoreManager
+  config: {fileID: 11400000, guid: f41fb0d15750d464b828187ccdc5edf0, type: 2}
+  ball: {fileID: 2029485689}
+  resolver: {fileID: 776447982}
+  machine: {fileID: 625405123}
 --- !u!1 &1782951242
 GameObject:
   m_ObjectHideFlags: 0
