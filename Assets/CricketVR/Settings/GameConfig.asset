@@ -98,3 +98,22 @@ MonoBehaviour:
     settleTime: 0.5
     showDebugMarkers: 1
     logDeliveries: 1
+  contact:
+    response:
+      restitutionSweet: 0.5
+      restitutionOffCentre: 0.35
+      sweetSpotFromToe: 0.2
+      sweetSpotFalloff: 0.22
+      edgeZone: 0.25
+      edgeRestitutionScale: 0.55
+      edgeDeflectDegrees: 14
+      tangentialLoss: 0.25
+      maxExitSpeed: 45
+      batSpeedGain: 1.4
+    fullImpactSpeed: 30
+    hapticMinAmplitude: 0.55
+    hapticMaxAmplitude: 1
+    hapticSeconds: 0.06
+    showContactMarker: 1
+    logContacts: 1
+    logNearMissWithin: 0.15

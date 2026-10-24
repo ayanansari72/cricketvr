@@ -14,7 +14,7 @@ Documentation checks confirm that requirements map to tasks and scenarios. That 
 | AC-02 | REQ-002, REQ-015 | **Pass** | APK sha256 f35ebef…f8192; E-005, E-006 | Re-check if the stance, net or scoreboard moves (M3/M7) |
 | AC-03 | REQ-003, REQ-007 | **Pass (right controller)**; left-hand bat pending hardware | APK sha256 9a0e7fc…2663b; E-007–E-014 | Re-run left-hand checks when the left controller works |
 | AC-04 | REQ-004, REQ-005 | **Pass on Quest** | APK sha256 b8f7d8d…9ace3; E-015–E-019 | Re-check if physics rate or pitch material changes |
-| AC-05 | REQ-006, REQ-007, REQ-015 | Not run | None | M5 scripted and device contacts |
+| AC-05 | REQ-006, REQ-007, REQ-015 | **Pass on Quest (right controller)**: scripted matrix + owner tests 1-5 | APK sha256 fe6daeb…0800e; E-020–E-029 | Re-check if contact math, physics rate or bat alignment changes; left hand pending hardware |
 | AC-06 | REQ-008, REQ-009, REQ-010 | Not run | None | M6 outcomes/metrics |
 | AC-07 | REQ-011, REQ-012 | Not run | None | M7 six-delivery loop |
 | AC-08 | REQ-013 | Not run | None | M7 restart checks |
@@ -345,6 +345,166 @@ Actual result and measured values: owner: "bounce seems good now". Also: "blocki
 Outcome: AC-04 Pass. Tunneling observed: input for M5 (REQ-007).
 Log or artifact path: owner report in session
 Remaining limitation / follow-up task: M5 T016-T018: own swept contact detection and resolver; log every bat-ball encounter
+```
+
+```text
+Check ID / acceptance scenario: E-020 / AC-05 scripted contact matrix (T016-T020)
+Requirement IDs: REQ-006, REQ-007, REQ-015
+Date and tester: 2026-10-23, agent
+Git commit or build identifier: Builds/CricketVR.apk sha256 7260e1f98134e1a3e9c162feece191b093c17640d4f21eff3e1d495cc7c1d61e (uncommitted on top of c988eac)
+Unity and package versions: as E-001
+Environment: EditMode; PlayMode with real BatController/BallController/BatBallContactResolver, 144 Hz physics, 72 Hz frames, scripted controller driver
+Configuration: GameConfig defaults (e 0.50 sweet / 0.28 off-centre, edge x0.55 + 14 deg, tangential loss 0.25, cap 45 m/s); ball 20-24 m/s; 10 runs per case varying x +/-2 cm, height +/-2 cm, speed
+Steps or exact command: -runTests EditMode; -runTests PlayMode
+Expected result: AC-05: no missed collision or duplicate impulse in the matrix; attack faster than soft defence; finite bounded results
+Actual result and measured values: EditMode 51/51 (sweep catches a 0.6 m/step crossing, a 120-degree rotation through a stationary ball that both end poses miss, initial overlap; beside-blade miss; stationary face e x speed; soft < block < drive; face angle -> direction; loft -> launch; toe weaker; edge deflects and loses pace; separating ignored; 5000 random contacts finite and <= 45 m/s). PlayMode 17/17. Matrix, each 10/10 runs with exactly one contact: stationary block mean exit 10.8 m/s (all back toward the bowler); soft defence (bat -2.5 m/s) 7.1 m/s vs drive (bat 14 m/s) 31.8 m/s; lofted drive (face +25 deg) 26.7 m/s at 36.8 deg launch; off-centre toe sweet factor 0.55 and slower than the middle; rotation-dominated swing 25 rad/s (~20 degrees per frame) 30.2 m/s, no tunnelling; initial overlap resolved once with the ball ending in front of the face; contact during an origin-change reset not applied. Collision matrix saved: Ball with Pitch/Boundary/Stumps only, BatProxy with nothing. Build 0 errors / 0 warnings; install Success.
+Outcome: Pass (scripted). Scripted success does not prove all human swings are covered.
+Log or artifact path: EditMode.xml / PlayMode.xml in the agent session scratchpad
+Remaining limitation / follow-up task: owner headset tests (blocks, drives, lofts, off-centre, fast swings, feel, audio/haptics); physics bat may trail the visual by about one frame in fast swings
+```
+
+```text
+Check ID / acceptance scenario: E-021 / M5 test 1 on Quest: ball passed through the bat (build 7260e1f…)
+Requirement IDs: REQ-003, REQ-007
+Date and tester: 2026-10-23, owner + agent (device log)
+Git commit or build identifier: Builds/CricketVR.apk sha256 7260e1f98134e1a3e9c162feece191b093c17640d4f21eff3e1d495cc7c1d61e
+Unity and package versions: as E-001
+Environment: Quest device, right controller; adb logcat
+Configuration: swept resolver; tracked state from Input System binding <XRController>{RightHand}/isTracked
+Steps or exact command: owner blocked ~10 good-length deliveries with a still bat
+Expected result: every ball hits the bat
+Actual result and measured values: FAIL: "ball is still passing through as before". Log: zero "Bat contact" and zero near-miss lines; no swing summaries for the whole session; TrackingLost resets after startup. BatController treated the controller as untracked, so HasStepPoses was false and the resolver (by design) did nothing. The Input System isTracked binding did not report the tracked state of the controller driving the grip pose. No swing summaries had been captured since the switch to grip-pose trackers (E-014 also had none), consistent with this.
+Outcome: Fail; root cause in tracked-state source
+Log or artifact path: device logcat in session
+Remaining limitation / follow-up task: Fixed in build e04774ae0d0999890b7d7bc60c301db21f48e108d1bb520468aa225eca8ceb9d: tracked state read from UnityEngine.XR InputDevices at the hand's XRNode first, Input System binding only as fallback; diagnostics log added.
+```
+
+```text
+Check ID / acceptance scenario: E-022 / M5 test 1 re-run (build e04774a…): blocking and feedback
+Requirement IDs: REQ-006, REQ-007, REQ-015
+Date and tester: 2026-10-23, owner + agent (device log)
+Git commit or build identifier: Builds/CricketVR.apk sha256 e04774ae0d0999890b7d7bc60c301db21f48e108d1bb520468aa225eca8ceb9d
+Unity and package versions: as E-001
+Environment: Quest device, right controller
+Configuration: as E-020 with the tracked-state fix
+Steps or exact command: owner blocked good-length deliveries
+Expected result: no pass-through; sound and vibration on contact
+Actual result and measured values: owner: "blocking is working". Log: 24 bat contacts; near misses with gaps 1.3-9.7 cm (balls that genuinely passed by). Most contacts 0.42-0.56 m above the toe (top of the blade; sweet factor 0.00-0.10, e 0.16-0.30) because good-length balls now arrive about hip high; bat point speeds 1.9-11.3 m/s; exit 8-20 m/s. Owner feedback: (1) impact sound "metallic, like two metal objects", and the same for every shot; should vary with connection and bat region. (2) vibration present but the same for every shot; should vary with connection. Diagnostics lines were not in the captured buffer.
+Outcome: Pass for blocking (REQ-007 pass-through fixed on device); feedback needs redesign (REQ-015)
+Log or artifact path: device logcat in session
+Remaining limitation / follow-up task: Build b8337157030441312e8f9114b16fd5e720a6aaf1da1551f661d4300df97710e1: modal-synthesis wooden sounds (middle "tock", off-centre "thud", edge "click", 3 variants each) blended by sweet/edge factors with loudness by impact speed; haptic patterns by connection (middle light short pulse, off-centre stinging buzz, edge sharp tick). Owner re-check pending. Many contacts high on the blade: review sweet-spot height vs good-length bounce height with the owner.
+```
+
+```text
+Check ID / acceptance scenario: E-023 / M5 feedback re-check (build b833715…) and switch to recorded sounds
+Requirement IDs: REQ-015
+Date and tester: 2026-10-23, owner + agent
+Git commit or build identifier: tested b8337157030441312e8f9114b16fd5e720a6aaf1da1551f661d4300df97710e1; new b830c577e3b265847ecd004754d1e0e218c4dcc660782ab4b00e14f44b28e52a
+Unity and package versions: as E-001
+Environment: Quest device (owner); Mac speakers for A/B listening; Python analysis
+Configuration: modal-synthesis sounds; haptics 0.3-0.6
+Steps or exact command: owner tested contacts in the headset; agent played four synthesised candidates on the Mac; owner supplied their own recording ("Sector 66.m4a", 24 s, owner's recording, approved for use)
+Expected result: wooden, varied sound and vibration
+Actual result and measured values: owner: synthesised bat "rubbery", edges "clicky", volume low; vibration low and the same for all shots. Recording analysis: ~20 impacts, spectral centroid ~2.8-3.8 kHz, ring ~90-100 ms to -20 dB, dominant ~570 Hz, all peaks clipped (9-61 samples). Three least-clipped hits (1.148, 3.045, 4.488 s) cut as middle clips; off-centre = low-pass 1.3 kHz x2, pitch -15%, faster decay; edge = 60 ms attack high-passed at 2.5 kHz. Owner approved the clips after listening on the Mac. Tools/audio/derive_bat_sounds.py reproduces all 9 clips byte-for-byte. Game: AudioSource spatial blend 0.4 (was 1), loudness 0.45-1 by approach speed (was 0.2-1); clips PCM, decompress on load. Haptics: amplitude 0.55-1 (was 0.3-0.6) with distinct rhythms (middle one 40 ms pulse; off-centre full-strength jolt then fading buzz ~0.26 s; edge two 20 ms ticks 50 ms apart). EditMode 51/51, PlayMode 17/17, build clean, install Success.
+Outcome: Fail for synthesised feedback; replaced, re-check pending
+Log or artifact path: Assets/CricketVR/Audio/Bat*_N.wav; Tools/audio/derive_bat_sounds.py
+Remaining limitation / follow-up task: owner re-check in the headset
+```
+
+```text
+Check ID / acceptance scenario: E-024 / M5 test 1 re-check: impact sound and vibration by connection
+Requirement IDs: REQ-015
+Date and tester: 2026-10-24, owner
+Git commit or build identifier: b830c577e3b265847ecd004754d1e0e218c4dcc660782ab4b00e14f44b28e52a
+Unity and package versions: as E-001
+Environment: Quest 3 standalone, right hand
+Configuration: recorded clips (Tools/audio/derive_bat_sounds.py); spatial blend 0.4; loudness 0.45-1; haptics 0.55-1 with per-kind rhythm
+Steps or exact command: Good length, A to bowl; middle, high-on-blade, toe and edge contacts
+Expected result: middle sounds like a real bat; middle/off-centre/edge distinguishable by sound and vibration; volume and strength adequate
+Actual result and measured values: owner: "all pass". Device log not captured (Unity logcat buffer empty on read).
+Outcome: Pass (owner observation)
+Log or artifact path: none
+Remaining limitation / follow-up task: M5 tests 2-5 (drives, lofts, off-centre/edge direction, fast swings)
+```
+
+```text
+Check ID / acceptance scenario: E-025 / M5 test 2: drives (straight, off, on; push vs full drive)
+Requirement IDs: REQ-006, REQ-007
+Date and tester: 2026-10-24, owner
+Git commit or build identifier: b830c577e3b265847ecd004754d1e0e218c4dcc660782ab4b00e14f44b28e52a
+Unity and package versions: as E-001
+Environment: Quest 3 standalone, right hand
+Configuration: Good length, default speed
+Steps or exact command: 3-4 straight drives, 2-3 off drives, 2-3 on drives, one gentle push vs one full drive
+Expected result: direction follows the face; full drive clearly faster than a push; no implausible launch or tunnelling
+Actual result and measured values: owner: "all pass". Device log not captured (Unity lines were no longer in the logcat buffer when read), so no per-shot speeds or counts.
+Outcome: Pass (owner observation)
+Log or artifact path: none
+Remaining limitation / follow-up task: M5 tests 3-5
+```
+
+```text
+Check ID / acceptance scenario: E-026 / M5 test 3: lofted shots
+Requirement IDs: REQ-006, REQ-007
+Date and tester: 2026-10-24, owner
+Git commit or build identifier: b830c577e3b265847ecd004754d1e0e218c4dcc660782ab4b00e14f44b28e52a
+Unity and package versions: as E-001
+Environment: Quest 3 standalone, right hand
+Configuration: Good length, default speed
+Steps or exact command: 2 ground drives (face down), 3-4 lofted drives (face open, low-to-high), 2 full-effort lofted hits
+Expected result: open face + upward swing lifts the ball, closed face keeps it low; believable launch angles; no implausible launch or tunnelling
+Actual result and measured values: owner: "all pass". No Unity lines in logcat: the game wrote no log output after build b830c57 was installed (logging worked on the earlier build, E-021).
+Outcome: Pass (owner observation)
+Log or artifact path: none
+Remaining limitation / follow-up task: per-shot device log measurements missing for E-025-E-027 (see open items)
+```
+
+```text
+Check ID / acceptance scenario: E-027 / M5 test 4: off-centre and edge direction and pace
+Requirement IDs: REQ-007
+Date and tester: 2026-10-24, owner
+Git commit or build identifier: b830c577e3b265847ecd004754d1e0e218c4dcc660782ab4b00e14f44b28e52a
+Unity and package versions: as E-001
+Environment: Quest 3 standalone, right hand
+Configuration: Good length, default speed
+Steps or exact command: firm drives: 2 middle, 2-3 toe, 2-3 high on the blade, 3-4 outer/inner edge
+Expected result: toe and high-blade hits slower than middle; edges deflect sideways; no off-centre hit faster than middle or at a wild angle
+Actual result and measured values: owner: "all pass". Logcat at 15:31 showed the game had not been opened since the agent closed it at 15:28 (relaunch was blocked: controllers asleep), so no device log for this test.
+Outcome: Pass (owner observation)
+Log or artifact path: none
+Remaining limitation / follow-up task: per-shot device log measurements missing for E-025-E-027 (see open items)
+```
+
+```text
+Check ID / acceptance scenario: E-028 / M5 test 5: fast swings and feel; swing-power tuning
+Requirement IDs: REQ-006, REQ-007
+Date and tester: 2026-10-24, owner + agent
+Git commit or build identifier: tested b830c577e3b265847ecd004754d1e0e218c4dcc660782ab4b00e14f44b28e52a; new fe6daebde87b29468639e2ef7605ddfbefe405b902f9e8e208efa17389e0800e
+Unity and package versions: as E-001
+Environment: Quest 3 standalone, right hand; Mac batch-mode tests
+Configuration: tested: e 0.50 sweet (0.16 m from toe, falloff 0.17) / 0.28 off-centre, no assist. New: sweet 0.20 m, falloff 0.22, off-centre 0.35, batSpeedGain 1.4
+Steps or exact command: 6-8 full-speed swings, 2-3 late whipped hits, 3-4 at one step faster bowling
+Expected result: no tunnelling or double hits; hard swings powerful but believable
+Actual result and measured values: owner: no ball passed through the bat and none was hit twice; hard swings "not powerful enough". No device log for this test (game not logging / not running when read). Change: swing assist and wider sweet area (plan.md decisions log). Estimated at a 10 m/s contact-point swing vs a 22 m/s ball: high on the blade (0.45 m from toe) 19 -> 28 m/s exit; middle 26 -> 32 m/s; stationary block unchanged. Scripted matrix: drive (bat 14 m/s) 31.8 -> 40.0 m/s; soft defence 5.5 m/s; stationary block 10.8 m/s (unchanged); lofted drive 32.9 m/s at 33.6 deg; toe slower than middle (sweet 0.54); all cases 10/10 single contacts. EditMode 52/52 (new: swing assist speeds up drives, leaves a stationary block alone). PlayMode 17/17 on 3 consecutive runs after a harness fix: a run is repeated (max 2, logged) only if the Editor stalled > 0.1 s during it, because the tracker then suppresses contacts by design (two earlier failures each coincided with such a stall). Build Success, install Success.
+Outcome: Partial: tunnelling/double-hit check passes (owner observation); power fails, retuned, re-check pending
+Log or artifact path: none
+Remaining limitation / follow-up task: owner re-check of hard-swing power; confirm the game writes to logcat on the new build
+```
+
+```text
+Check ID / acceptance scenario: E-029 / M5 test 5 re-check: hard-swing power (AC-05 sign-off)
+Requirement IDs: REQ-006, REQ-007, REQ-015
+Date and tester: 2026-10-24, owner + agent
+Git commit or build identifier: fe6daebde87b29468639e2ef7605ddfbefe405b902f9e8e208efa17389e0800e
+Unity and package versions: as E-001
+Environment: Quest 3 standalone, right hand, USB connected for logcat
+Configuration: batSpeedGain 1.4; sweet 0.20 m from toe, falloff 0.22; e 0.50 sweet / 0.35 off-centre
+Steps or exact command: 4-5 full-power drives, 2-3 gentle pushes, 1-2 dead-bat blocks (owner also played further balls)
+Expected result: hard swings powerful but believable; pushes and blocks soft
+Actual result and measured values: owner: "all pass". Logcat (game logging again on this build; tracking diagnostics: XR node valid, isTracked True, step poses True): 136 bat contacts (#2-#140), 55 near misses (closest gaps 2.0-13.4 cm), 0 contacts ignored for suppressed motion, 0 duplicate contacts. Exit speeds up to 35.5 m/s (128 km/h), none at the 45 m/s cap; blocks and pushes (contact-point bat speed 0.5-2.8 m/s) 5.5-14.8 m/s; firm swings (bat 6.5-14 m/s) 16-34 m/s. Contacts still mostly 0.40-0.56 m above the toe. A toe contact (0.06 m from toe) now has sweet factor ~0.65 because of the wider falloff, so toe hits are less penalised than before; owner accepted.
+Outcome: Pass (owner observation + device log). AC-05 passes for the right controller.
+Log or artifact path: adb logcat -s Unity (session 2026-10-24 15:50-16:05 IST)
+Remaining limitation / follow-up task: left-hand bat checks pending hardware; physics bat may trail the visual by about one frame in fast swings; many blocks leave at steep downward angles (face angled down), worth watching in M6 scoring
 ```
 
 ## Rules

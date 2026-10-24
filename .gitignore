@@ -33,3 +33,7 @@ crashlytics-build.properties
 
 # Unity build scratch
 /.utmp/
+
+# Python
+__pycache__/
+*.pyc

@@ -42,6 +42,7 @@ namespace CricketVR
         Color _bladeColor = Color.white;
         bool _tinted;
         bool _hasPose; // FixedUpdate can run before the first Update has sampled a pose
+        bool _stepContinuous; // false after a reset: the next step must not sweep across the discontinuity
 
         // Swing logging (evidence for AC-03): peak toe speed between rest periods.
         bool _inSwing;
@@ -55,6 +56,12 @@ namespace CricketVR
         public BatMotionTracker Motion => _tracker;
         public bool ContactAllowed => _tracker != null && _tracker.ContactAllowed(Time.unscaledTimeAsDouble);
         public Pose GripPose { get; private set; }
+
+        /// <summary>Bat (grip-frame) pose at the start and end of the current physics step, for swept contact tests.</summary>
+        public Pose StepStartPose { get; private set; }
+        public Pose StepEndPose { get; private set; }
+        /// <summary>False until a pose is sampled, while untracked, and on the step right after a motion reset.</summary>
+        public bool HasStepPoses { get; private set; }
         Transform Controller(BatHand hand) => hand == BatHand.Right ? rightController : leftController;
 
         void Awake()
@@ -112,12 +119,53 @@ namespace CricketVR
         void OnTrackingOriginUpdated(XRInputSubsystem _) => _originChanged = true;
         void OnFocusChanged(bool _) => _focusChanged = true;
 
+        /// <summary>
+        /// Tracked state of the controller holding the bat. Read from the XR node device first (exactly one device
+        /// per hand). The Input System binding "&lt;XRController&gt;{RightHand}/isTracked" is only a fallback: on Quest it
+        /// can resolve to a different device than the one driving the pose (E-021).
+        /// </summary>
         public bool IsControllerTracked(BatHand hand)
         {
             if (!requireTrackedState)
                 return true;
+            if (TryXrNodeTracked(hand, out bool tracked))
+                return tracked;
+            return InputSystemTracked(hand);
+        }
+
+        static bool TryXrNodeTracked(BatHand hand, out bool tracked)
+        {
+            tracked = false;
+            var device = InputDevices.GetDeviceAtXRNode(hand == BatHand.Right ? XRNode.RightHand : XRNode.LeftHand);
+            return device.isValid && device.TryGetFeatureValue(UnityEngine.XR.CommonUsages.isTracked, out tracked);
+        }
+
+        bool InputSystemTracked(BatHand hand)
+        {
             var action = hand == BatHand.Right ? _rightTracked : _leftTracked;
             return action != null && action.ReadValue<float>() > 0.5f;
+        }
+
+        // Development diagnostics for tracked-state sources (E-021): logged at start and every 5 s for 30 s.
+        float _nextDiagnostic;
+        int _diagnosticsLeft = 7;
+
+        void LogTrackingDiagnostics()
+        {
+            if (_diagnosticsLeft <= 0 || Time.unscaledTime < _nextDiagnostic)
+                return;
+            _diagnosticsLeft--;
+            _nextDiagnostic = Time.unscaledTime + 5f;
+            var node = InputDevices.GetDeviceAtXRNode(_hand == BatHand.Right ? XRNode.RightHand : XRNode.LeftHand);
+            bool nodeKnown = TryXrNodeTracked(_hand, out bool nodeTracked);
+            var action = _hand == BatHand.Right ? _rightTracked : _leftTracked;
+            string bound = "";
+            if (action != null)
+                foreach (var c in action.controls)
+                    bound += $"{c.device.name}:{c.ReadValueAsObject()} ";
+            Debug.Log($"[CricketVR] Bat tracking diagnostics ({_hand}): XR node '{node.name}' valid {node.isValid}, " +
+                      $"isTracked {(nodeKnown ? nodeTracked.ToString() : "n/a")}; Input System isTracked {InputSystemTracked(_hand)} " +
+                      $"[{bound.Trim()}]; step poses {HasStepPoses}; contact allowed {ContactAllowed}");
         }
 
         void Update()
@@ -140,6 +188,7 @@ namespace CricketVR
 
             UpdateSwingLog();
             UpdateTint();
+            LogTrackingDiagnostics();
         }
 
         void FixedUpdate()
@@ -148,11 +197,19 @@ namespace CricketVR
             if (proxyCollider.enabled != usable)
                 proxyCollider.enabled = usable;
             if (!usable)
+            {
+                HasStepPoses = false;
+                _stepContinuous = false;
                 return;
+            }
 
             // Kinematic bodies must be moved with MovePosition/MoveRotation so the physics engine
-            // sees the motion (and speculative CCD can use it), rather than teleporting the transform.
+            // sees the motion, rather than teleporting the transform.
             var pose = GripPose;
+            StepStartPose = _stepContinuous ? StepEndPose : pose;
+            StepEndPose = pose;
+            HasStepPoses = true;
+            _stepContinuous = true;
             physicsProxy.MovePosition(pose.position + pose.rotation * Geometry.BladeCenter);
             physicsProxy.MoveRotation(pose.rotation);
         }
@@ -241,6 +298,7 @@ namespace CricketVR
         void NotifyReset(MotionResetReason reason)
         {
             _inSwing = false;
+            _stepContinuous = false; // every reset path: never sweep the bat across a discontinuity
             Debug.Log($"[CricketVR] Bat motion reset: {reason}; contacts suppressed for {config.bat.motionLimits.suppressAfterReset:F2} s");
             MotionReset?.Invoke(reason);
         }

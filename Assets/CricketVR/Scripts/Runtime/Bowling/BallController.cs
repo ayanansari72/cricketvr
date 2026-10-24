@@ -84,6 +84,21 @@ namespace CricketVR
             _slowSince = -1f;
         }
 
+        /// <summary>
+        /// Applies a bat strike decided by <see cref="BatBallContactResolver"/> (the only authority for bat response).
+        /// Ignored for a stale delivery id.
+        /// </summary>
+        public bool ApplyBatHit(int deliveryId, Vector3 position, Vector3 velocity)
+        {
+            if (!InFlight || deliveryId != ActiveDeliveryId)
+                return false;
+            _body.position = position;
+            _body.linearVelocity = velocity;
+            _body.angularVelocity = Vector3.zero;
+            _slowSince = -1f;
+            return true;
+        }
+
         /// <summary>Ends the active delivery (if any) and hides the ball.</summary>
         public void Cancel()
         {

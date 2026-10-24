@@ -8,7 +8,7 @@ Detailed evidence lives in `specs/001-six-ball-net/validation.md`. This table is
 | M2 Practice net | Implemented (T007–T009) | Builder idempotent; EditMode 11/11; APK built and installed (E-005) | **AC-02 passed** (E-006) | Done; next M3 tracked bat |
 | M3 Tracked bat | Implemented (T010–T012), realistic bat | EditMode 32/32, PlayMode 3/3 (E-007–E-013) | **AC-03 pass, right controller** (E-014) | Left-hand checks when the left controller works |
 | M4 Bowling machine | Implemented (T013–T015), 144 Hz physics, tuned bounce | EditMode 40/40, PlayMode 10/10 (E-015, E-016, E-018) | **AC-04 pass** (E-017–E-019) | Done |
-| M5 Batting contact | Not started | Pending | Pending | Ball passes through the bat with PhysX default contact (E-019): build swept detection + resolver |
+| M5 Batting contact | Implemented (T016–T020): swept resolver, response with swing assist, recorded impact sounds, rhythm-coded haptics | EditMode 52/52, PlayMode 17/17 incl. AC-05 matrix (E-020, E-028) | **AC-05 pass, right controller** (E-022–E-029) | Done; next M6 needs owner decision PC-01 |
 | M6 Delivery outcomes | Not started | Pending | Pending | Owner decision PC-01 (zone geometry) |
 | M7 Six-ball loop | Not started | Pending | Pending | After M6 |
 | M8 Quest polish | Not started | Pending | Pending | After M7 |

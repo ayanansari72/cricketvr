@@ -1,6 +1,6 @@
 # Implementation tasks
 
-Status: M1 implemented, AC-01 partial (left controller hardware). M2 complete (AC-02 passed). M3 complete for the right controller (AC-03 pass; left hand pending hardware). M4 complete (AC-04 passed on Quest). M5 next: ball passes through the bat with PhysX's default contact (E-019). Later milestones pending. This is a task specification, not evidence of a built game.
+Status: M1 implemented, AC-01 partial (left controller hardware). M2 complete (AC-02 passed). M3 complete for the right controller (AC-03 pass; left hand pending hardware). M4 complete (AC-04 passed on Quest). M5 complete (AC-05 passed on Quest, right controller). Later milestones pending. This is a task specification, not evidence of a built game.
 
 Use `[ ]` for incomplete and `[x]` only for the named completed work. Keep device acceptance pending in `validation.md` when unavailable. Dependencies apply in the order shown. Automated preparatory work may continue while waiting for a physical check, but do not represent untested prerequisites as accepted.
 
@@ -43,11 +43,11 @@ Dependency: M3 setup. Requirements: REQ-004, REQ-005. Acceptance: AC-04.
 
 Dependency: M4. Requirements: REQ-006, REQ-007, REQ-015. Acceptance: AC-05 plus relevant AC-03 checks.
 
-- [ ] T016 Configure primitive colliders, layers, supported CCD, and one contact-resolution authority.
-- [ ] T017 Implement bounded, orientation-aware response using relative/contact-point velocity and off-centre tuning.
-- [ ] T018 Add focused sweep/substep handling if measured CCD gaps require it; handle overlaps and duplicate callback/sweep encounters.
-- [ ] T019 Add impact audio, modest selected-controller haptics, and optional contact debug markers.
-- [ ] T020 Run scripted contact matrix and owner headset checks; record speeds, angles, counts, failures, and feel adjustments.
+- [x] T016 Configure primitive colliders, layers, supported CCD, and one contact-resolution authority.
+- [x] T017 Implement bounded, orientation-aware response using relative/contact-point velocity and off-centre tuning.
+- [x] T018 Add focused sweep/substep handling if measured CCD gaps require it; handle overlaps and duplicate callback/sweep encounters.
+- [x] T019 Add impact audio, modest selected-controller haptics, and optional contact debug markers.
+- [x] T020 Run scripted contact matrix and owner headset checks; record speeds, angles, counts, failures, and feel adjustments.
 
 ## M6 — Outcomes and scoring
 

@@ -78,6 +78,25 @@ namespace CricketVR
         public bool logDeliveries = true;
     }
 
+    [Serializable]
+    public class ContactSettings
+    {
+        public BatResponseTuning response = BatResponseTuning.Default;
+
+        [Header("Feedback")]
+        [Tooltip("Approach speed (m/s) that gives full impact volume and the strongest vibration.")]
+        public float fullImpactSpeed = 30f;
+        public float hapticMinAmplitude = 0.55f;
+        public float hapticMaxAmplitude = 1f;
+        public float hapticSeconds = 0.06f;
+
+        [Header("Debug")]
+        public bool showContactMarker = true;
+        public bool logContacts = true;
+        [Tooltip("Log deliveries that passed this close (m) to the blade without contact.")]
+        public float logNearMissWithin = 0.15f;
+    }
+
     /// <summary>Tunable game settings. One asset: Assets/CricketVR/Settings/GameConfig.asset.</summary>
     [CreateAssetMenu(menuName = "CricketVR/Game Config", fileName = "GameConfig")]
     public class GameConfig : ScriptableObject
@@ -85,5 +104,6 @@ namespace CricketVR
         public Handedness defaultHandedness = Handedness.Right;
         public BatSettings bat = new BatSettings();
         public DeliverySettings delivery = new DeliverySettings();
+        public ContactSettings contact = new ContactSettings();
     }
 }

@@ -35,6 +35,20 @@ namespace CricketVR.Editor
             var debug = GetOrAdd<BowlingDebugControls>(machineGo, created);
 
             machine.Configure(config, ball, environment.transform.Find("LauncherAnchor"), target, bounce);
+
+            var contactMarker = EnsureContactMarker(markers, created);
+            var bat = main.transform.Find("Player/Bat")?.GetComponent<BatController>();
+            var resolverGo = Child(gameplay, "BatBallContact", created).gameObject;
+            var resolver = GetOrAdd<BatBallContactResolver>(resolverGo, created);
+            resolver.Configure(config, bat, ball, contactMarker);
+            if (!resolverGo.TryGetComponent<AudioSource>(out _))
+                resolverGo.AddComponent<AudioSource>();
+            var feedback = GetOrAdd<FeedbackController>(resolverGo, created);
+            feedback.Configure(config, resolver, ImpactClips("BatMiddle"), ImpactClips("BatOffCentre"), ImpactClips("BatEdge"));
+            EditorUtility.SetDirty(resolver);
+            EditorUtility.SetDirty(feedback);
+            if (bat == null)
+                Debug.LogError("[CricketVR] Player/Bat has no BatController; bat contact won't work.");
             debug.Configure(config, machine, EnsureReadout(main, created));
             EditorUtility.SetDirty(machine);
             EditorUtility.SetDirty(debug);
@@ -43,7 +57,12 @@ namespace CricketVR.Editor
 
         // ---------- Physics ----------
 
-        /// <summary>The ball only touches the pitch/outfield, nets, stumps and the bat proxy; the bat proxy only touches the ball.</summary>
+        /// <summary>
+        /// The ball only touches the pitch/outfield, nets and stumps. Ball-bat contact is NOT left to the physics
+        /// engine: its default contact let balls pass through the bat on the headset (E-019) and would add an
+        /// uncontrolled impulse. BatBallContactResolver is the only authority for bat hits (plan.md §10).
+        /// The bat proxy collides with nothing.
+        /// </summary>
         static void ConfigureCollisionMatrix()
         {
             int ball = LayerMask.NameToLayer(BallLayer);
@@ -53,15 +72,12 @@ namespace CricketVR.Editor
                 LayerMask.NameToLayer(PracticeNetBuilder.PitchLayer),
                 LayerMask.NameToLayer(PracticeNetBuilder.BoundaryLayer),
                 LayerMask.NameToLayer(PracticeNetBuilder.StumpsLayer),
-                bat,
             };
             for (int layer = 0; layer < 32; layer++)
             {
                 Physics.IgnoreLayerCollision(ball, layer, !ballHits.Contains(layer));
-                if (layer != ball)
-                    Physics.IgnoreLayerCollision(bat, layer, true);
+                Physics.IgnoreLayerCollision(bat, layer, true);
             }
-            Physics.IgnoreLayerCollision(bat, ball, false);
         }
 
         static void ApplyPhysicsMaterials(GameObject environment, List<string> created)
@@ -186,6 +202,48 @@ namespace CricketVR.Editor
                 new Vector3(diameter, 0.001f, diameter), PracticeNetBuilder.Mat(name, color));
             go.SetActive(false);
             created.Add(name);
+            return go.transform;
+        }
+
+        const string AudioFolder = "Assets/CricketVR/Audio";
+
+        /// <summary>
+        /// The owner's recorded bat hits (Tools/audio/derive_bat_sounds.py). Short, latency-critical clips:
+        /// decompressed on load and stored uncompressed so they start instantly.
+        /// </summary>
+        static AudioClip[] ImpactClips(string prefix)
+        {
+            var clips = new List<AudioClip>();
+            for (int i = 0; ; i++)
+            {
+                var path = $"{AudioFolder}/{prefix}_{i}.wav";
+                if (!File.Exists(path)) break;
+                var importer = (AudioImporter)AssetImporter.GetAtPath(path);
+                var settings = importer.defaultSampleSettings;
+                if (settings.loadType != AudioClipLoadType.DecompressOnLoad || settings.compressionFormat != AudioCompressionFormat.PCM || !importer.forceToMono)
+                {
+                    settings.loadType = AudioClipLoadType.DecompressOnLoad;
+                    settings.compressionFormat = AudioCompressionFormat.PCM;
+                    importer.defaultSampleSettings = settings;
+                    importer.forceToMono = true;
+                    importer.SaveAndReimport();
+                }
+                clips.Add(AssetDatabase.LoadAssetAtPath<AudioClip>(path));
+            }
+            if (clips.Count == 0)
+                Debug.LogError($"[CricketVR] No {prefix}_N.wav clips in {AudioFolder}.");
+            return clips.ToArray();
+        }
+
+        static Transform EnsureContactMarker(Transform markers, List<string> created)
+        {
+            var t = markers.Find("ContactMarker");
+            if (t != null)
+                return t;
+            var go = PracticeNetBuilder.CreateVisual(PrimitiveType.Sphere, "ContactMarker", markers, Vector3.zero,
+                Vector3.one * 0.03f, PracticeNetBuilder.Mat("ContactMarker", new Color(1f, 0.9f, 0.1f)));
+            go.SetActive(false);
+            created.Add("ContactMarker");
             return go.transform;
         }
 
